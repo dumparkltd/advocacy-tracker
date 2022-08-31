@@ -23,7 +23,6 @@ RSpec.describe ActorCategory, type: :model do
   end
 
   context "with an actor and a category" do
-    let(:actor) { FactoryBot.create(:actor) }
     let!(:taxonomy) { FactoryBot.create(:actortype_taxonomy, actortype: actor.actortype, taxonomy: category.taxonomy) }
 
     it "create sets the relationship_updated_at on the actor" do
