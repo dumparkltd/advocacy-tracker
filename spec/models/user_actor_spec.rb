@@ -12,34 +12,32 @@ RSpec.describe UserActor, type: :model do
     let(:actor) { FactoryBot.create(:actor) }
     let(:user) { FactoryBot.create(:user) }
 
+    subject { described_class.create(actor: actor, user: user) }
+
     it "create sets the relationship_updated_at on the actor" do
-      expect { described_class.create(actor: actor, user: user) }
-        .to change { actor.reload.relationship_updated_at }
+      expect { subject }.to change { actor.reload.relationship_updated_at }
     end
 
     it "create sets the relationship_updated_at on the user" do
-      expect { described_class.create(actor: actor, user: user) }
-        .to change { user.reload.relationship_updated_at }
+      expect { subject }.to change { user.reload.relationship_updated_at }
     end
 
     it "update sets the relationship_updated_at on the actor" do
-      relationship = described_class.create(actor: actor, user: user)
-      expect { relationship.touch }.to change { actor.reload.relationship_updated_at }
+      subject
+      expect { subject.touch }.to change { actor.reload.relationship_updated_at }
     end
 
     it "update sets the relationship_updated_at on the user" do
-      relationship = described_class.create(actor: actor, user: user)
-      expect { relationship.touch }.to change { user.reload.relationship_updated_at }
+      subject
+      expect { subject.touch }.to change { user.reload.relationship_updated_at }
     end
 
     it "destroy sets the relationship_updated_at on the actor" do
-      relationship = described_class.create(actor: actor, user: user)
-      expect { relationship.destroy }.to change { actor.reload.relationship_updated_at }
+      expect { subject.destroy }.to change { actor.reload.relationship_updated_at }
     end
 
     it "destroy sets the relationship_updated_at on the user" do
-      relationship = described_class.create(actor: actor, user: user)
-      expect { relationship.destroy }.to change { user.reload.relationship_updated_at }
+      expect { subject.destroy }.to change { user.reload.relationship_updated_at }
     end
   end
 end

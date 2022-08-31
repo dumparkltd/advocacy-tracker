@@ -44,34 +44,32 @@ RSpec.describe MeasureActor, type: :model do
     let(:actor) { FactoryBot.create(:actor) }
     let(:measure) { FactoryBot.create(:measure) }
 
+    subject { described_class.create(actor: actor, measure: measure) }
+
     it "create sets the relationship_updated_at on the actor" do
-      expect { described_class.create(actor: actor, measure: measure) }
-        .to change { actor.reload.relationship_updated_at }
+      expect { subject }.to change { actor.reload.relationship_updated_at }
     end
 
     it "create sets the relationship_updated_at on the measure" do
-      expect { described_class.create(actor: actor, measure: measure) }
-        .to change { measure.reload.relationship_updated_at }
+      expect { subject }.to change { measure.reload.relationship_updated_at }
     end
 
     it "update sets the relationship_updated_at on the actor" do
-      relationship = described_class.create(actor: actor, measure: measure)
-      expect { relationship.touch }.to change { actor.reload.relationship_updated_at }
+      subject
+      expect { subject.touch }.to change { actor.reload.relationship_updated_at }
     end
 
     it "update sets the relationship_updated_at on the measure" do
-      relationship = described_class.create(actor: actor, measure: measure)
-      expect { relationship.touch }.to change { measure.reload.relationship_updated_at }
+      subject
+      expect { subject.touch }.to change { measure.reload.relationship_updated_at }
     end
 
     it "destroy sets the relationship_updated_at on the actor" do
-      relationship = described_class.create(actor: actor, measure: measure)
-      expect { relationship.destroy }.to change { actor.reload.relationship_updated_at }
+      expect { subject.destroy }.to change { actor.reload.relationship_updated_at }
     end
 
     it "destroy sets the relationship_updated_at on the measure" do
-      relationship = described_class.create(actor: actor, measure: measure)
-      expect { relationship.destroy }.to change { measure.reload.relationship_updated_at }
+      expect { subject.destroy }.to change { measure.reload.relationship_updated_at }
     end
   end
 end

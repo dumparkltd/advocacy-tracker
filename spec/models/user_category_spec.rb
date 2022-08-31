@@ -7,12 +7,23 @@ RSpec.describe UserCategory, type: :model do
   it { is_expected.to validate_presence_of(:user_id) }
   it { is_expected.to validate_presence_of(:category_id) }
 
-  context "with a user" do
+  context "with a user and a category" do
     let(:user) { FactoryBot.create(:user) }
+    let(:category) { FactoryBot.create(:category) }
 
-    it "should set the relationship_updated_at on the user" do
-      expect { FactoryBot.create(:user_category, user: user) }
-        .to change { user.reload.relationship_updated_at }
+    subject { described_class.create(user: user, category: category) }
+
+    it "create sets the relationship_updated_at on the user" do
+      expect { subject }.to change { user.reload.relationship_updated_at }
+    end
+
+    it "update sets the relationship_updated_at on the user" do
+      subject
+      expect { subject.touch }.to change { user.reload.relationship_updated_at }
+    end
+
+    it "destroy sets the relationship_updated_at on the user" do
+      expect { subject.destroy }.to change { user.reload.relationship_updated_at }
     end
   end
 end

@@ -19,34 +19,32 @@ RSpec.describe Membership, type: :model do
   end
 
   context "with a member and a memberof" do
+    subject { described_class.create(member: member, memberof: memberof) }
+
     it "create sets the relationship_updated_at on the member" do
-      expect { described_class.create(member: member, memberof: memberof) }
-        .to change { member.reload.relationship_updated_at }
+      expect { subject }.to change { member.reload.relationship_updated_at }
     end
 
     it "create sets the relationship_updated_at on the memberof" do
-      expect { described_class.create(member: member, memberof: memberof) }
-        .to change { memberof.reload.relationship_updated_at }
+      expect { subject }.to change { memberof.reload.relationship_updated_at }
     end
 
     it "update sets the relationship_updated_at on the member" do
-      relationship = described_class.create(member: member, memberof: memberof)
-      expect { relationship.touch }.to change { member.reload.relationship_updated_at }
+      subject
+      expect { subject.touch }.to change { member.reload.relationship_updated_at }
     end
 
     it "update sets the relationship_updated_at on the memberof" do
-      relationship = described_class.create(member: member, memberof: memberof)
-      expect { relationship.touch }.to change { memberof.reload.relationship_updated_at }
+      subject
+      expect { subject.touch }.to change { memberof.reload.relationship_updated_at }
     end
 
     it "destroy sets the relationship_updated_at on the member" do
-      relationship = described_class.create(member: member, memberof: memberof)
-      expect { relationship.destroy }.to change { member.reload.relationship_updated_at }
+      expect { subject.destroy }.to change { member.reload.relationship_updated_at }
     end
 
     it "destroy sets the relationship_updated_at on the memberof" do
-      relationship = described_class.create(member: member, memberof: memberof)
-      expect { relationship.destroy }.to change { memberof.reload.relationship_updated_at }
+      expect { subject.destroy }.to change { memberof.reload.relationship_updated_at }
     end
   end
 end
