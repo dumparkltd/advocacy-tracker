@@ -1,6 +1,4 @@
 class RecommendationRecommendationsController < ApplicationController
-  before_action :set_and_authorize_recommendation_recommendation, only: [:show, :destroy]
-
   def show
     render json: serialize(@recommendation_recommendation)
   end
@@ -29,9 +27,10 @@ class RecommendationRecommendationsController < ApplicationController
 
   private
 
-  def set_and_authorize_recommendation_recommendation
-    @recommendation_recommendation = policy_scope(base_object).find(params[:id])
-    authorize @recommendation_recommendation
+  def authorize!
+    @recommendation_recommendation = policy_scope(base_object)&.find(params[:id]) if params[:id]
+
+    authorize @recommendation_recommendation || base_object
   end
 
   def base_object
