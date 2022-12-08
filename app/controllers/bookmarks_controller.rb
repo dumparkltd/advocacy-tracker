@@ -1,7 +1,7 @@
 class BookmarksController < ApplicationController
   before_action :authenticate_user!
   before_action :set_and_authorize_bookmark, only: [:update, :destroy]
-  skip_before_action :authorize_base_object!
+  skip_before_action :authorize!
   skip_after_action :verify_authorized, only: [:show]
 
   def forbidden

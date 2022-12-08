@@ -1,6 +1,6 @@
 class UserRolesController < ApplicationController
   before_action :set_and_authorize_user_role, only: [:show, :update, :destroy]
-  skip_before_action :authorize_base_object!
+  skip_before_action :authorize!
 
   # GET /user_roles
   def index
