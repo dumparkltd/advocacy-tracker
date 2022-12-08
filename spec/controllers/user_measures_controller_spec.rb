@@ -111,7 +111,7 @@ RSpec.describe UserMeasuresController, type: :controller do
         end
 
         context "with a user_measure belonging to the signed in user" do
-          let(:user_measure) { FactoryBot.create(:user_measure, user:, created_by: user) }
+          let(:user_measure) { FactoryBot.create(:user_measure, created_by: user) }
 
           it "will not allow you to delete a user_measure" do
             expect(subject).to be_forbidden
@@ -131,7 +131,7 @@ RSpec.describe UserMeasuresController, type: :controller do
         end
 
         context "with a user_measure belonging to the signed in user" do
-          let(:user_measure) { FactoryBot.create(:user_measure, user:, created_by: user) }
+          let(:user_measure) { FactoryBot.create(:user_measure, created_by: user) }
 
           it "will allow you to delete a user_measure" do
             expect(subject).to be_no_content
@@ -151,7 +151,7 @@ RSpec.describe UserMeasuresController, type: :controller do
         end
 
         context "with a user_measure belonging to the signed in user" do
-          let(:user_measure) { FactoryBot.create(:user_measure, user:, created_by: user) }
+          let(:user_measure) { FactoryBot.create(:user_measure, created_by: user) }
 
           it "will allow you to delete a user_measure" do
             expect(subject).to be_no_content
@@ -171,7 +171,7 @@ RSpec.describe UserMeasuresController, type: :controller do
         end
 
         context "with a user_measure belonging to the signed in user" do
-          let(:user_measure) { FactoryBot.create(:user_measure, user:, created_by: user) }
+          let(:user_measure) { FactoryBot.create(:user_measure, created_by: user) }
 
           it "will allow you to delete a user_measure" do
             expect(subject).to be_no_content
