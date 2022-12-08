@@ -1,6 +1,4 @@
 class MembershipsController < ApplicationController
-  before_action :set_and_authorize_membership, only: [:show, :destroy]
-
   # GET /memberships
   def index
     @memberships = policy_scope(base_object).order(created_at: :desc).page(params[:page])
@@ -35,9 +33,10 @@ class MembershipsController < ApplicationController
   private
 
   # Use callbacks to share common setup or constraints between actions.
-  def set_and_authorize_membership
-    @membership = policy_scope(base_object).find(params[:id])
-    authorize @membership
+  def authorize!
+    @membership = policy_scope(base_object)&.find(params[:id]) if params[:id]
+
+    authorize @membership || base_object
   end
 
   def base_object
