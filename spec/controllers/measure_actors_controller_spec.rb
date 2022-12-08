@@ -118,29 +118,89 @@ RSpec.describe MeasureActorsController, type: :controller do
   end
 
   describe "Delete destroy" do
-    let(:measure_actor) { FactoryBot.create(:measure_actor) }
-    subject { delete :destroy, format: :json, params: {id: measure_actor} }
+    let(:subject) { delete :destroy, format: :json, params: {id: measure_actor} }
 
-    context "when not signed in" do
-      it "not allow deleting a measure_actor" do
-        expect(subject).to be_unauthorized
+    context "when signed in" do
+      before { sign_in user }
+
+      context "as a guest" do
+        let(:user) { FactoryBot.create(:user) }
+
+        context "with a measure_actor not belonging to the signed in user" do
+          let(:measure_actor) { FactoryBot.create(:measure_actor) }
+
+          it "will not allow you to delete a measure_actor" do
+            expect(subject).to be_forbidden
+          end
+        end
+
+        context "with a measure_actor belonging to the signed in user" do
+          let(:measure_actor) { FactoryBot.create(:measure_actor, created_by: user) }
+
+          it "will not allow you to delete a measure_actor" do
+            expect(subject).to be_forbidden
+          end
+        end
       end
-    end
 
-    context "when user signed in" do
-      it "will not allow a guest to delete a measure_actor" do
-        sign_in guest
-        expect(subject).to be_forbidden
+      context "as a manager" do
+        let(:user) { FactoryBot.create(:user, :manager) }
+
+        context "with a measure_actor not belonging to the signed in user" do
+          let(:measure_actor) { FactoryBot.create(:measure_actor) }
+
+          it "will not allow you to delete a measure_actor" do
+            expect(subject).to be_forbidden
+          end
+        end
+
+        context "with a measure_actor belonging to the signed in user" do
+          let(:measure_actor) { FactoryBot.create(:measure_actor, created_by: user) }
+
+          it "will allow you to delete a measure_actor" do
+            expect(subject).to be_no_content
+          end
+        end
       end
 
-      it "will not allow an analyst to delete a measure_actor" do
-        sign_in analyst
-        expect(subject).to be_forbidden
+      context "as a coordinator" do
+        let(:user) { FactoryBot.create(:user, :coordinator) }
+
+        context "with a measure_actor not belonging to the signed in user" do
+          let(:measure_actor) { FactoryBot.create(:measure_actor) }
+
+          it "will not allow you to delete a measure_actor" do
+            expect(subject).to be_forbidden
+          end
+        end
+
+        context "with a measure_actor belonging to the signed in user" do
+          let(:measure_actor) { FactoryBot.create(:measure_actor, created_by: user) }
+
+          it "will allow you to delete a measure_actor" do
+            expect(subject).to be_no_content
+          end
+        end
       end
 
-      it "will allow a manager to delete a measure_actor" do
-        sign_in user
-        expect(subject).to be_no_content
+      context "as an admin" do
+        let(:user) { FactoryBot.create(:user, :admin) }
+
+        context "with a measure_actor not belonging to the signed in user" do
+          let(:measure_actor) { FactoryBot.create(:measure_actor) }
+
+          it "will allow you to delete a measure_actor" do
+            expect(subject).to be_no_content
+          end
+        end
+
+        context "with a measure_actor belonging to the signed in user" do
+          let(:measure_actor) { FactoryBot.create(:measure_actor, created_by: user) }
+
+          it "will allow you to delete a measure_actor" do
+            expect(subject).to be_no_content
+          end
+        end
       end
     end
   end
