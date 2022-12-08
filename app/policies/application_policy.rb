@@ -23,7 +23,10 @@ class ApplicationPolicy
   end
 
   def destroy?
-    @user.role?("admin") || @user.role?("manager") || @user.role?("coordinator")
+    @user.role?("admin") || (
+      (@user.role?("manager") || @user.role?("coordinator")) &&
+        @record&.created_by_id == @user.id
+    )
   end
 
   class Scope
