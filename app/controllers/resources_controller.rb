@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 class ResourcesController < ApplicationController
-  before_action :set_and_authorize_resource, only: [:show, :update, :destroy]
-
   # GET /resources
   def index
     @resources = policy_scope(base_object).order(created_at: :desc)
@@ -36,8 +34,8 @@ class ResourcesController < ApplicationController
     if params[:resource][:updated_at] && DateTime.parse(params[:resource][:updated_at]).to_i != @res.updated_at.to_i
       return render json: '{"error":"Record outdated"}', status: :unprocessable_entity
     end
+
     if @res.update!(permitted_attributes(@res))
-      set_and_authorize_resource
       render json: serialize(@res)
     end
   end
@@ -51,9 +49,10 @@ class ResourcesController < ApplicationController
   private
 
   # Use callbacks to share common setup or constraints between actions.
-  def set_and_authorize_resource
-    @res = policy_scope(base_object).find(params[:id])
-    authorize @res
+  def authorize!
+    @res = policy_scope(base_object)&.find(params[:id]) if params[:id]
+
+    authorize @res || base_object
   end
 
   def base_object
