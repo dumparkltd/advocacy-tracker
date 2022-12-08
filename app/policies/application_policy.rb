@@ -25,7 +25,7 @@ class ApplicationPolicy
   def destroy?
     @user.role?("admin") || (
       (@user.role?("manager") || @user.role?("coordinator")) &&
-        @record&.created_by_id == @user.id
+        @record.respond_to?(:created_by_id) && @record.created_by_id == @user.id
     )
   end
 
