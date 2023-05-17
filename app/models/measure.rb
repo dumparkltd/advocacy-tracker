@@ -86,7 +86,7 @@ class Measure < VersionedRecord
       !is_archive? &&
       notifications? &&
       (!draft? && !saved_change_to_attribute?(:draft)) &&
-      ((saved_changes.keys & Measure.notifiable_attribute_names).any? || saved_change_to_attribute?(:relationship_updated_at))
+      ((saved_changes.keys & Measure.notifiable_attribute_names).any? || relationship_updated?)
   end
 
   def not_own_descendant
