@@ -36,7 +36,7 @@ RSpec.describe UserMeasureMailer, type: :mailer do
     let(:mail) { UserMeasureMailer.task_updated(user_measure) }
 
     it "renders the headers" do
-      expect(mail.subject).to eq(I18n.t("user_measure_mailer.task_updated.subject", measuretype: user_measure.measure.measuretype.title.downcase)))
+      expect(mail.subject).to eq(I18n.t("user_measure_mailer.task_updated.subject", measuretype: user_measure.measure.measuretype.title.downcase))
       expect(mail.to).to eq([user_measure.user.email])
       expect(mail.from).to eq(%w[plasticpolicy@wwf.no])
     end
