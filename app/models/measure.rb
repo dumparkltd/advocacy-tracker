@@ -44,7 +44,7 @@ class Measure < VersionedRecord
   )
 
   def self.notifiable_attribute_names
-    Measure.attribute_names - %w[created_at draft is_archive updated_at]
+    Measure.attribute_names - %w[created_at draft is_archive updated_at relationship_updated_at]
   end
 
   def notifiable_user_measures(user_id:)
