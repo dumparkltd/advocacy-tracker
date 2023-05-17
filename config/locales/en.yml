@@ -21,4 +21,4 @@ en:
     published:
       subject: New WWF Plastic Advocacy %{measuretype} assigned to you
     task_updated:
-      subject: Task updated
+      subject: Updated WWF Plastic Advocacy %{measuretype}
