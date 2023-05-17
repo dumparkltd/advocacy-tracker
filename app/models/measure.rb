@@ -47,19 +47,33 @@ class Measure < VersionedRecord
     Measure.attribute_names - %w[created_at draft is_archive updated_at]
   end
 
-  after_commit :send_task_updated_notifications!,
+  def notifiable_user_measures(user_id:)
+    user_measures.reject { |um| um.user.id == user_id }
+  end
+
+  after_commit :queue_task_updated_notifications!,
     on: :update,
     if: [:task?, :relationship_updated?]
 
-  def send_task_updated_notifications!(user_id: ::PaperTrail.request.whodunnit)
+  def queue_task_updated_notifications!(user_id: ::PaperTrail.request.whodunnit)
     return unless notify?
 
-    user_measures.reject { |um| um.user.id == user_id }.each do |user_measure|
-      UserMeasureMailer.task_updated(user_measure).deliver_now
+    delete_existing_task_notifications!(user_id:)
+
+    notifiable_user_measures(user_id:).each do |user_measure|
+      TaskNotificationJob.perform_in(ENV.fetch("TASK_NOTIFICATION_DELAY", 20).to_i.seconds, user_measure.id)
     end
   end
 
   private
+
+  def delete_existing_task_notifications!(user_id:)
+    user_measure_ids = notifiable_user_measures(user_id:).pluck(:id)
+
+    Sidekiq::ScheduledSet.new
+      .select { |job| user_measure_ids.include?(job.args.first) && job.klass == "TaskNotificationJob" }
+      .map(&:delete)
+  end
 
   def different_parent
     if parent_id && parent_id == id
