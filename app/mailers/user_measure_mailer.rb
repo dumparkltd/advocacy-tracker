@@ -41,6 +41,6 @@ class UserMeasureMailer < ApplicationMailer
     @name = user_measure.user.name
     @title = user_measure.measure.title
 
-    mail to: user_measure.user.email, subject: I18n.t("user_measure_mailer.task_updated.subject")
+    mail to: user_measure.user.email, subject: I18n.t("user_measure_mailer.task_updated.subject", measuretype: @type)
   end
 end
