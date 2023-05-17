@@ -44,7 +44,7 @@ class Measure < VersionedRecord
   )
 
   def self.notifiable_attribute_names
-    Measure.attribute_names - %w[created_at draft is_archive updated_at relationship_updated_at]
+    Measure.attribute_names - %w[created_at draft is_archive updated_at]
   end
 
   def notifiable_user_measures(user_id:)
@@ -86,7 +86,7 @@ class Measure < VersionedRecord
       !is_archive? &&
       notifications? &&
       (!draft? && !saved_change_to_attribute?(:draft)) &&
-      (saved_changes.keys & Measure.notifiable_attribute_names).any?
+      ((saved_changes.keys & Measure.notifiable_attribute_names).any? || saved_change_to_attribute?(:relationship_updated_at))
   end
 
   def not_own_descendant
