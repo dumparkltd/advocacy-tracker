@@ -40,6 +40,7 @@ class UserMeasureMailer < ApplicationMailer
     @measure_id = user_measure.measure_id
     @name = user_measure.user.name
     @title = user_measure.measure.title
+    @type = user_measure.measure.measuretype.title.downcase
 
     mail to: user_measure.user.email, subject: I18n.t("user_measure_mailer.task_updated.subject", measuretype: @type)
   end
