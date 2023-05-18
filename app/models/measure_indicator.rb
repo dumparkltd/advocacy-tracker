@@ -14,13 +14,13 @@ class MeasureIndicator < ApplicationRecord
 
   def set_relationship_updated
     if measure && !measure.destroyed?
-      measure.update_column(:relationship_updated_at, Time.zone.now)
-      measure.update_column(:relationship_updated_by_id, ::PaperTrail.request.whodunnit)
+      measure.update_attribute(:relationship_updated_at, Time.zone.now)
+      measure.update_attribute(:relationship_updated_by_id, ::PaperTrail.request.whodunnit)
     end
 
     if indicator && !indicator.destroyed?
-      indicator.update_column(:relationship_updated_at, Time.zone.now)
-      indicator.update_column(:relationship_updated_by_id, ::PaperTrail.request.whodunnit)
+      indicator.update_attribute(:relationship_updated_at, Time.zone.now)
+      indicator.update_attribute(:relationship_updated_by_id, ::PaperTrail.request.whodunnit)
     end
   end
 end

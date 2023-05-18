@@ -21,8 +21,8 @@ class ActorCategory < VersionedRecord
 
   def set_relationship_updated
     if actor && !actor.destroyed?
-      actor.update_column(:relationship_updated_at, Time.zone.now)
-      actor.update_column(:relationship_updated_by_id, ::PaperTrail.request.whodunnit)
+      actor.update_attribute(:relationship_updated_at, Time.zone.now)
+      actor.update_attribute(:relationship_updated_by_id, ::PaperTrail.request.whodunnit)
     end
   end
 end
