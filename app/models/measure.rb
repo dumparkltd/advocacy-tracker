@@ -56,6 +56,16 @@ class Measure < VersionedRecord
     if: [:task?, :relationship_updated?]
 
   def queue_task_updated_notifications!(user_id: ::PaperTrail.request.whodunnit)
+    puts "queue_task_updated_notifications - task? #{task?}" # true
+    puts "queue_task_updated_notifications - is_archive? #{is_archive?}"  # false
+    puts "queue_task_updated_notifications - notifications? #{notifications?}"  # true
+    puts "queue_task_updated_notifications - draft? #{draft?}" # false
+    puts "queue_task_updated_notifications - saved_change_to_attribute?(:draft) #{saved_change_to_attribute?(:draft)}" # false
+    puts "queue_task_updated_notifications - (saved_changes.keys & Measure.notifiable_attribute_names).any? #{(saved_changes.keys & Measure.notifiable_attribute_names).any?}" # false
+    puts "queue_task_updated_notifications - saved_changes.keys #{saved_changes.keys.join(', ')}" #
+    puts "queue_task_updated_notifications - relationship_updated? #{relationship_updated?}" # false
+    puts "queue_task_updated_notifications - saved_change_to_attribute?(:relationship_updated_at) #{saved_change_to_attribute?(:relationship_updated_at)}" # false
+    puts "queue_task_updated_notifications - notify? #{notify?}" # false
     return unless notify?
 
     delete_existing_task_notifications!(user_id:)
