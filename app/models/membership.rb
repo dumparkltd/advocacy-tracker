@@ -16,13 +16,13 @@ class Membership < VersionedRecord
 
   def set_relationship_updated
     if member && !member.destroyed?
-      member.update_column(:relationship_updated_at, Time.zone.now)
-      member.update_column(:relationship_updated_by_id, ::PaperTrail.request.whodunnit)
+      member.update_attribute(:relationship_updated_at, Time.zone.now)
+      member.update_attribute(:relationship_updated_by_id, ::PaperTrail.request.whodunnit)
     end
 
     if memberof && !memberof.destroyed?
-      memberof.update_column(:relationship_updated_at, Time.zone.now)
-      memberof.update_column(:relationship_updated_by_id, ::PaperTrail.request.whodunnit)
+      memberof.update_attribute(:relationship_updated_at, Time.zone.now)
+      memberof.update_attribute(:relationship_updated_by_id, ::PaperTrail.request.whodunnit)
     end
   end
 end

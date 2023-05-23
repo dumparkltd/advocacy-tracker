@@ -7,7 +7,7 @@ class UserMeasure < VersionedRecord
   validates :measure_id, presence: true
 
   def notify?
-    measure.notifications? && !(measure.draft? || measure.is_archive?)
+    measure.notifications?
   end
 
   after_commit :set_relationship_updated, on: [:create, :update, :destroy]
@@ -16,13 +16,13 @@ class UserMeasure < VersionedRecord
 
   def set_relationship_updated
     if measure && !measure.destroyed?
-      measure.update_column(:relationship_updated_at, Time.zone.now)
-      measure.update_column(:relationship_updated_by_id, ::PaperTrail.request.whodunnit)
+      measure.update_attribute(:relationship_updated_at, Time.zone.now)
+      measure.update_attribute(:relationship_updated_by_id, ::PaperTrail.request.whodunnit)
     end
 
     if user && !user.destroyed?
-      user.update_column(:relationship_updated_at, Time.zone.now)
-      user.update_column(:relationship_updated_by_id, ::PaperTrail.request.whodunnit)
+      user.update_attribute(:relationship_updated_at, Time.zone.now)
+      user.update_attribute(:relationship_updated_by_id, ::PaperTrail.request.whodunnit)
     end
   end
 end

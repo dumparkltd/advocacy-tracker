@@ -14,11 +14,13 @@ gem "kaminari"
 gem "net-smtp"
 gem "paper_trail"
 gem "pg", "~> 1.2"
+gem "puma", "~> 5.5"
 gem "pundit"
 gem "rack-cors", require: "rack/cors"
 gem "rails", "~> 6.0"
 gem "sass-rails", "~> 6.0"
 gem "secure_headers", ">= 3.0"
+gem "sidekiq"
 
 group :production do
   gem "net-pop"
@@ -59,5 +61,3 @@ group :test do
   gem "shoulda-matchers"
   gem "timecop"
 end
-
-gem "puma", "~> 5.5"

@@ -314,6 +314,7 @@ ActiveRecord::Schema.define(version: 2022_09_13_083216) do
     t.boolean "has_parent", default: true
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
+    t.boolean "notifications", default: false
   end
 
   create_table "memberships", force: :cascade do |t|

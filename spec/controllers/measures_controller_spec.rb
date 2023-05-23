@@ -10,7 +10,7 @@ RSpec.describe MeasuresController, type: :controller do
   let(:guest) { FactoryBot.create(:user) }
   let(:manager) { FactoryBot.create(:user, :manager) }
 
-  describe "Get index" do
+  describe "GET index" do
     subject { get :index, format: :json }
 
     context "when not signed in" do
@@ -163,7 +163,7 @@ RSpec.describe MeasuresController, type: :controller do
     end
   end
 
-  describe "Get show" do
+  describe "GET show" do
     let(:measure) { FactoryBot.create(:measure) }
     let(:draft_measure) { FactoryBot.create(:measure, draft: true) }
     let(:private_measure) { FactoryBot.create(:measure, :private) }
@@ -203,7 +203,7 @@ RSpec.describe MeasuresController, type: :controller do
     end
   end
 
-  describe "Post create" do
+  describe "POST create" do
     context "when not signed in" do
       it "not allow creating a measure" do
         post :create, format: :json, params: {measure: {title: "test", description: "test", target_date: "today"}}
@@ -337,120 +337,222 @@ RSpec.describe MeasuresController, type: :controller do
         expect(subject).to be_ok
       end
 
-      context "with a user measure assigned" do
-        let(:user) { FactoryBot.create(:user) }
-        let!(:user_measure) { FactoryBot.create(:user_measure, measure: measure, user: user) }
+      context "with a successful update to a task measure" do
+        let(:measure) { FactoryBot.create(:measure, notifications: true) }
+        let!(:user_measure) { FactoryBot.create(:user_measure, user: manager, measure: measure) }
 
-        it "will not send any notification emails" do
-          expect { subject }.not_to change { ActionMailer::Base.deliveries.count }
-        end
-
-        context "when the measure changes from draft to published" do
-          let(:measure) { FactoryBot.create(:measure, :draft, notifications: notifications) }
-
-          subject do
-            put :update,
-              format: :json,
-              params: {
-                id: measure,
-                measure: {description: "test update", draft: false, target_date: "today update", title: "test update"}
-              }
-          end
-
-          before { sign_in manager }
-
-          context "with measure notifications disabled" do
-            let(:notifications) { false }
-
-            it "will not send a notification email" do
-              expect { subject }.not_to change { ActionMailer::Base.deliveries.count }
-            end
-          end
-
-          context "with measure notifications enabled" do
-            let(:notifications) { true }
-
-            context "when the user is the updater" do
-              let(:user) { manager }
-
-              it "will not send a notification email" do
-                expect { subject }.not_to change { ActionMailer::Base.deliveries.count }
-              end
-            end
-
-            context "when the user is not the updater" do
-              it "will send a notification email to the user" do
-                expect { subject }.to change { ActionMailer::Base.deliveries.count }
-                expect(ActionMailer::Base.deliveries.last.to).to eq [user.email]
-                expect(ActionMailer::Base.deliveries.last.subject).to eq I18n.t(:subject, scope: [:user_measure_mailer, :published], measuretype: measure.measuretype.title.downcase)
-              end
-            end
-          end
-        end
-      end
-
-      context "is_archive" do
-        subject do
-          put :update, format: :json, params: {id: measure, measure: {is_archive: true}}
-        end
-
-        it "can't be set by manager" do
-          sign_in manager
-          expect(JSON.parse(subject.body).dig("data", "attributes", "is_archive")).to eq false
-        end
-
-        it "can be set by admin" do
+        before do
+          allow_any_instance_of(Measuretype).to receive(:notifications?).and_return(true)
           sign_in admin
-          expect(JSON.parse(subject.body).dig("data", "attributes", "is_archive")).to eq true
         end
-      end
 
-      it "will reject and update where the last_updated_at is older than updated_at in the database" do
-        sign_in manager
-        measure_get = get :show, params: {id: measure}, format: :json
-        json = JSON.parse(measure_get.body)
-        current_update_at = json["data"]["attributes"]["updated_at"]
+        context "when the task is not archived" do
+          let(:measure) { FactoryBot.create(:measure, is_archive: false, notifications: true) }
 
-        Timecop.travel(Time.new + 15.days) do
-          subject = put :update,
-            format: :json,
-            params: {id: measure,
-                     measure: {title: "test update", description: "test updateeee", target_date: "today update", updated_at: current_update_at}}
-          expect(subject).to be_ok
+          context "and is updated to archived" do
+            it "will not create a notification for the user" do
+              expect {
+                put :update, format: :json, params: {id: measure, measure: {is_archive: true}}
+              }.not_to change { ActionMailer::Base.deliveries.count }.from(0)
+            end
+
+            context "even if another field is set" do
+              it "will not create a notification for the user" do
+                expect {
+                  put :update, format: :json, params: {id: measure, measure: {description: "updating", is_archive: true}}
+                }.not_to change { ActionMailer::Base.deliveries.count }.from(0)
+              end
+            end
+          end
         end
-        Timecop.travel(Time.new + 5.days) do
-          subject = put :update,
-            format: :json,
-            params: {id: measure,
-                     measure: {title: "test update", description: "test updatebbbb", target_date: "today update", updated_at: current_update_at}}
-          expect(subject).to_not be_ok
+
+        %w[
+          amount_comment
+          amount
+          code
+          comment
+          date_comment
+          description
+          has_reference_landbased_ml
+          indicator_summary
+          outcome
+          private
+          reference_landbased_ml
+          reference_ml
+          status_comment
+          status_lbs_protocol
+          target_comment
+          target_date_comment
+          target_date
+          title
+          url
+        ].each do |attr|
+          context "when the task is published" do
+            let(:measure) { FactoryBot.create(:measure, :published, notifications: true) }
+
+            it "notifies the user of an update to #{attr}" do
+              expect(TaskNotificationJob).to receive(:perform_in).with(ENV.fetch("TASK_NOTIFICATION_DELAY", 20).to_i.seconds, user_measure.id)
+
+              put :update, format: :json, params: {id: measure, measure: {attr => "test"}}
+            end
+          end
+
+          context "when the task is draft" do
+            let(:measure) { FactoryBot.create(:measure, :draft, notifications: true) }
+
+            it "does not notify the user of an update to #{attr}" do
+              expect(TaskNotificationJob).not_to receive(:perform_in)
+
+              put :update, format: :json, params: {id: measure, measure: {attr => "test"}}
+            end
+          end
+
+          context "when the task is archived" do
+            let(:measure) { FactoryBot.create(:measure, :is_archive, notifications: true) }
+
+            it "does not notify the user of an update to #{attr}" do
+              expect(TaskNotificationJob).not_to receive(:perform_in)
+
+              put :update, format: :json, params: {id: measure, measure: {attr => "test"}}
+            end
+
+            context "and is updated to not archived" do
+              it "does notify the user of an update to #{attr}" do
+                expect(TaskNotificationJob).to receive(:perform_in).with(ENV.fetch("TASK_NOTIFICATION_DELAY", 20).to_i.seconds, user_measure.id)
+
+                put :update, format: :json, params: {id: measure, measure: {attr => "test", :is_archive => false}}
+              end
+            end
+          end
+
+          context "when the task is updated from draft" do
+            let(:measure) { FactoryBot.create(:measure, :draft, notifications: true) }
+            before { allow(UserMeasureMailer).to receive(:task_updated).and_return(double(deliver_now: true)) }
+
+            it "does not notify the user of an update to #{attr}" do
+              expect(TaskNotificationJob).not_to receive(:perform_in)
+
+              put :update, format: :json, params: {id: measure, measure: {attr => "test", :draft => false}}
+            end
+          end
         end
-      end
 
-      it "will record what manager updated the measure", versioning: true do
-        expect(PaperTrail).to be_enabled
-        sign_in manager
-        json = JSON.parse(subject.body)
-        expect(json.dig("data", "attributes", "updated_by_id").to_i).to eq manager.id
-      end
+        context "with a user measure assigned" do
+          let(:user) { FactoryBot.create(:user) }
+          let!(:user_measure) { FactoryBot.create(:user_measure, measure: measure, user: user) }
+          before { sign_in user }
 
-      it "will return the latest updated_by", versioning: true do
-        expect(PaperTrail).to be_enabled
-        measure.versions.first.update_column(:whodunnit, admin.id)
-        sign_in manager
-        json = JSON.parse(subject.body)
-        expect(json.dig("data", "attributes", "updated_by_id").to_i).to eq(manager.id)
-      end
+          it "will not send any notification emails" do
+            expect(TaskNotificationJob).not_to receive(:perform_in)
+          end
 
-      it "will return an error if params are incorrect" do
-        sign_in manager
-        put :update, format: :json, params: {id: measure, measure: {title: ""}}
-        expect(response).to have_http_status(422)
+          context "when the measure changes from draft to published" do
+            let(:measure) { FactoryBot.create(:measure, :draft, notifications: notifications) }
+
+            subject do
+              put :update,
+                format: :json,
+                params: {
+                  id: measure,
+                  measure: {description: "test update", draft: false, target_date: "today update", title: "test update"}
+                }
+            end
+
+            before { sign_in manager }
+
+            context "with measure notifications disabled" do
+              let(:notifications) { false }
+
+              it "will not queue a notification email" do
+                expect(TaskNotificationJob).not_to receive(:perform_in)
+              end
+            end
+
+            context "with measure notifications enabled" do
+              before { allow(UserMeasureMailer).to receive(:task_updated).and_return(double(deliver_now: true)) }
+
+              let(:notifications) { true }
+
+              context "when the user is the updater" do
+                let(:user) { manager }
+
+                it "will not queue a notification email" do
+                  expect(TaskNotificationJob).not_to receive(:perform_in)
+                end
+              end
+
+              context "when the user is not the updater" do
+                it "will not queue a notification email" do
+                  expect(TaskNotificationJob).not_to receive(:perform_in)
+                end
+              end
+            end
+          end
+        end
+
+        context "is_archive" do
+          subject do
+            put :update, format: :json, params: {id: measure, measure: {is_archive: true}}
+          end
+
+          it "can't be set by manager" do
+            sign_in manager
+            expect(JSON.parse(subject.body).dig("data", "attributes", "is_archive")).to eq false
+          end
+
+          it "can be set by admin" do
+            sign_in admin
+            expect(JSON.parse(subject.body).dig("data", "attributes", "is_archive")).to eq true
+          end
+        end
+
+        it "will reject an update where the last_updated_at is older than updated_at in the database" do
+          sign_in manager
+          measure_get = get :show, params: {id: measure}, format: :json
+          json = JSON.parse(measure_get.body)
+          current_update_at = json["data"]["attributes"]["updated_at"]
+
+          Timecop.travel(Time.new + 15.days) do
+            subject = put :update,
+              format: :json,
+              params: {id: measure,
+                       measure: {title: "test update", description: "test updateeee", target_date: "today update", updated_at: current_update_at}}
+            expect(subject).to be_ok
+          end
+          Timecop.travel(Time.new + 5.days) do
+            subject = put :update,
+              format: :json,
+              params: {id: measure,
+                       measure: {title: "test update", description: "test updatebbbb", target_date: "today update", updated_at: current_update_at}}
+            expect(subject).to_not be_ok
+          end
+        end
+
+        it "will record what manager updated the measure", versioning: true do
+          expect(PaperTrail).to be_enabled
+          sign_in manager
+          json = JSON.parse(subject.body)
+          expect(json.dig("data", "attributes", "updated_by_id").to_i).to eq manager.id
+        end
+
+        it "will return the latest updated_by", versioning: true do
+          expect(PaperTrail).to be_enabled
+          measure.versions.first.update_column(:whodunnit, admin.id)
+          sign_in manager
+          json = JSON.parse(subject.body)
+          expect(json.dig("data", "attributes", "updated_by_id").to_i).to eq(manager.id)
+        end
+
+        it "will return an error if params are incorrect" do
+          sign_in manager
+          put :update, format: :json, params: {id: measure, measure: {title: ""}}
+          expect(response).to have_http_status(422)
+        end
       end
     end
   end
 
-  describe "Delete destroy" do
+  describe "DELETE destroy" do
     let(:measure) { FactoryBot.create(:measure) }
     subject { delete :destroy, format: :json, params: {id: measure} }
 
