@@ -10,7 +10,7 @@ class UserMeasure < VersionedRecord
     measure.notifications?
   end
 
-  after_commit :set_relationship_updated, on: [:create, :update, :destroy]
+  after_commit :set_relationship_updated, on: [:update, :destroy]
 
   private
 
