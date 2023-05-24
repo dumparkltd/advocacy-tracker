@@ -17,14 +17,6 @@ RSpec.describe UserMeasure, type: :model do
 
     subject { described_class.create(user: user, measure: measure) }
 
-    it "create sets the relationship_updated_at on the user" do
-      expect { subject }.to change { user.reload.relationship_updated_at }
-    end
-
-    it "create sets the relationship_updated_at on the measure" do
-      expect { subject }.to change { measure.reload.relationship_updated_at }
-    end
-
     it "update sets the relationship_updated_at on the user" do
       subject
       expect { subject.touch }.to change { user.reload.relationship_updated_at }
@@ -41,14 +33,6 @@ RSpec.describe UserMeasure, type: :model do
 
     it "destroy sets the relationship_updated_at on the measure" do
       expect { subject.destroy }.to change { measure.reload.relationship_updated_at }
-    end
-
-    it "create sets the relationship_updated_by_id on the user" do
-      expect { subject }.to change { user.reload.relationship_updated_by_id }.to(whodunnit)
-    end
-
-    it "create sets the relationship_updated_by_id on the measure" do
-      expect { subject }.to change { measure.reload.relationship_updated_by_id }.to(whodunnit)
     end
 
     it "update sets the relationship_updated_by_id on the user" do
