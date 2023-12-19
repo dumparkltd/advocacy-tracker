@@ -43,4 +43,12 @@ RSpec.describe User, type: :model do
       [User.count, UserActor.count, UserCategory.count, UserMeasure.count, UserRole.count, Bookmark.count]
     }.from([1, 1, 1, 1, 1, 1]).to([0, 0, 0, 0, 0, 0])
   end
+
+  it "doesn't create a new version when a token is created" do
+    expect { subject.create_token }.not_to change { subject.reload.versions.count }
+  end
+
+  it "doesn't create a new version when updated_at changes" do
+    expect { subject.touch(:updated_at) }.not_to change { subject.reload.versions.count }
+  end
 end
