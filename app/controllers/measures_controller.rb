@@ -36,6 +36,7 @@ class MeasuresController < ApplicationController
     originally_draft = @measure.draft?
     if @measure.update!(permitted_attributes(@measure))
       send_published_notification!(@measure) if originally_draft && !@measure.draft?
+      @measure.queue_task_updated_notifications!(user_id: current_user.id)
 
       render json: serialize(@measure)
     end

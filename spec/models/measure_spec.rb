@@ -95,4 +95,52 @@ RSpec.describe Measure, type: :model do
       }.from(2).to(1)
     end
   end
+
+  context "notifications" do
+    subject { FactoryBot.create(:measure, notifications: true) }
+    let!(:user) { FactoryBot.create(:user) }
+    let(:user_id) { user.id }
+    let!(:user_measure) { FactoryBot.create(:user_measure, measure: subject) }
+
+    before { allow(::PaperTrail.request).to receive(:whodunnit).and_return(user_id) }
+
+    context "for non 'task' measures" do
+      before { allow(subject.measuretype).to receive(:notifications?).and_return(false) }
+
+      it "won't send when relationship_updated_at changes" do
+        expect { subject.touch(:relationship_updated_at) }
+          .not_to change { ActionMailer::Base.deliveries.count }.from(0)
+      end
+    end
+
+    context "for 'task' measures" do
+      before { allow(subject.measuretype).to receive(:notifications?).and_return(true) }
+
+      context "when the current user owns the task" do
+        let(:user_id) { user_measure.user_id }
+
+        it "won't queue notifications when relationship_updated_at changes" do
+          expect(TaskNotificationJob).not_to receive(:perform_in)
+
+          subject.touch(:relationship_updated_at)
+        end
+      end
+
+      context "when the current user doesn't own the task" do
+        let(:user_id) { FactoryBot.create(:user).id }
+
+        it "will queue notifications when relationship_updated_at changes" do
+          expect(TaskNotificationJob).to receive(:perform_in).with(ENV.fetch("TASK_NOTIFICATION_DELAY", 20).to_i.seconds, user_measure.id)
+
+          subject.touch(:relationship_updated_at)
+        end
+      end
+
+      it "won't queue notifications when relationship_updated_at doesn't change" do
+        expect(subject).not_to receive(:queue_task_updated_notifications!)
+
+        subject.update(title: "testing 12345")
+      end
+    end
+  end
 end

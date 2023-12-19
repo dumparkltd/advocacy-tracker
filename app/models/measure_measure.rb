@@ -18,13 +18,13 @@ class MeasureMeasure < VersionedRecord
 
   def set_relationship_updated
     if measure && !measure.destroyed?
-      measure.update_column(:relationship_updated_at, Time.zone.now)
-      measure.update_column(:relationship_updated_by_id, ::PaperTrail.request.whodunnit)
+      measure.update_attribute(:relationship_updated_at, Time.zone.now)
+      measure.update_attribute(:relationship_updated_by_id, ::PaperTrail.request.whodunnit)
     end
 
     if other_measure && !other_measure.destroyed?
-      other_measure.update_column(:relationship_updated_at, Time.zone.now)
-      other_measure.update_column(:relationship_updated_by_id, ::PaperTrail.request.whodunnit)
+      other_measure.update_attribute(:relationship_updated_at, Time.zone.now)
+      other_measure.update_attribute(:relationship_updated_by_id, ::PaperTrail.request.whodunnit)
     end
   end
 end

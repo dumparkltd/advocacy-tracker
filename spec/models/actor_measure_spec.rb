@@ -27,6 +27,7 @@ RSpec.describe ActorMeasure, type: :model do
     let(:measure) { FactoryBot.create(:measure) }
 
     let(:whodunnit) { FactoryBot.create(:user).id }
+    before { allow(measure.measuretype).to receive(:notifications?).and_return(false) }
     before { allow(::PaperTrail.request).to receive(:whodunnit).and_return(whodunnit) }
 
     subject { described_class.create(actor: actor, measure: measure) }

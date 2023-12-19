@@ -43,11 +43,56 @@ class Measure < VersionedRecord
     :parent_id_allowed_by_measuretype
   )
 
+  def self.notifiable_attribute_names
+    Measure.attribute_names - %w[updated_at]
+  end
+
+  def notifiable_user_measures(user_id:)
+    user_measures.reject { |um| um.user.id == user_id }
+  end
+
+  after_commit :queue_task_updated_notifications!,
+    on: :update,
+    if: [:task?, :relationship_updated?]
+
+  def queue_task_updated_notifications!(user_id: ::PaperTrail.request.whodunnit)
+    return unless notify?
+
+    delete_existing_task_notifications!(user_id:)
+
+    notifiable_user_measures(user_id:).each do |user_measure|
+      TaskNotificationJob.perform_in(ENV.fetch("TASK_NOTIFICATION_DELAY", 20).to_i.seconds, user_measure.id)
+    end
+  end
+
   private
+
+  def delete_existing_task_notifications!(user_id:)
+    user_measure_ids = notifiable_user_measures(user_id:).pluck(:id)
+
+    Sidekiq::ScheduledSet.new
+      .select { |job| user_measure_ids.include?(job.args.first) && job.klass == "TaskNotificationJob" }
+      .map(&:delete)
+  end
 
   def different_parent
     if parent_id && parent_id == id
       errors.add(:parent_id, "can't be the same as id")
+    end
+  end
+
+  def notify?
+    task? &&
+      !is_archive? &&
+      notifications? &&
+      (!draft? && !saved_change_to_attribute?(:draft)) &&
+      (saved_changes.keys & Measure.notifiable_attribute_names).any?
+  end
+
+  def not_own_descendant
+    measure_parent = self
+    while (measure_parent = measure_parent.parent)
+      errors.add(:parent_id, "can't be its own descendant") if measure_parent.id == id
     end
   end
 
@@ -57,10 +102,11 @@ class Measure < VersionedRecord
     end
   end
 
-  def not_own_descendant
-    measure_parent = self
-    while (measure_parent = measure_parent.parent)
-      errors.add(:parent_id, "can't be its own descendant") if measure_parent.id == id
-    end
+  def relationship_updated?
+    saved_change_to_attribute?(:relationship_updated_at)
+  end
+
+  def task?
+    measuretype&.notifications?
   end
 end
