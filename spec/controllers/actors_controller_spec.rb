@@ -338,6 +338,7 @@ RSpec.describe ActorsController, type: :controller do
     end
 
     context "when user signed in" do
+      let(:admin) { FactoryBot.create(:user, :admin) }
       let(:guest) { FactoryBot.create(:user) }
       let(:user) { FactoryBot.create(:user, :manager) }
 
@@ -346,8 +347,13 @@ RSpec.describe ActorsController, type: :controller do
         expect(subject).to be_forbidden
       end
 
-      it "will allow a manager to delete an actor" do
+      it "will not allow a manager to delete an actor" do
         sign_in manager
+        expect(subject).to be_forbidden
+      end
+
+      it "will allow an admin to delete an actor" do
+        sign_in admin
         expect(subject).to be_no_content
       end
     end

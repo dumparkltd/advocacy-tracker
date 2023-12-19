@@ -73,6 +73,7 @@ RSpec.describe UserCategoriesController, type: :controller do
     end
 
     context "when user signed in" do
+      let(:admin) { FactoryBot.create(:user, :admin) }
       let(:guest) { FactoryBot.create(:user) }
       let(:user) { FactoryBot.create(:user, :manager) }
 
@@ -81,8 +82,13 @@ RSpec.describe UserCategoriesController, type: :controller do
         expect(subject).to be_forbidden
       end
 
-      it "will allow a manager to delete a user_category" do
+      it "will not allow a manager to delete a user_category" do
         sign_in user
+        expect(subject).to be_forbidden
+      end
+
+      it "will allow an admin to delete a user_category" do
+        sign_in admin
         expect(subject).to be_no_content
       end
     end
