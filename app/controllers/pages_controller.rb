@@ -1,6 +1,4 @@
 class PagesController < ApplicationController
-  before_action :set_and_authorize_page, only: [:show, :update, :destroy]
-
   # GET /pages
   def index
     @pages = policy_scope(base_object).order(created_at: :desc)
@@ -33,7 +31,6 @@ class PagesController < ApplicationController
       return render json: '{"error":"Record outdated"}', status: :unprocessable_entity
     end
     if @page.update!(permitted_attributes(@page))
-      set_and_authorize_page
       render json: serialize(@page)
     end
   end
@@ -46,9 +43,10 @@ class PagesController < ApplicationController
   private
 
   # Use callbacks to share common setup or constraints between actions.
-  def set_and_authorize_page
-    @page = policy_scope(base_object).find(params[:id])
-    authorize @page
+  def authorize!
+    @page = policy_scope(base_object)&.find(params[:id]) if params[:id]
+
+    authorize @page || base_object
   end
 
   def base_object

@@ -82,34 +82,89 @@ RSpec.describe MembershipsController, type: :controller do
   end
 
   describe "Delete destroy" do
-    let(:membership) { FactoryBot.create(:membership, member: member, memberof: memberof) }
-    subject { delete :destroy, format: :json, params: {id: membership} }
+    let(:subject) { delete :destroy, format: :json, params: {id: membership} }
 
-    context "when not signed in" do
-      it "not allow deleting a membership" do
-        expect(subject).to be_unauthorized
+    context "when signed in" do
+      before { sign_in user }
+
+      context "as a guest" do
+        let(:user) { FactoryBot.create(:user) }
+
+        context "with a membership not belonging to the signed in user" do
+          let(:membership) { FactoryBot.create(:membership) }
+
+          it "will not allow you to delete a membership" do
+            expect(subject).to be_forbidden
+          end
+        end
+
+        context "with a membership belonging to the signed in user" do
+          let(:membership) { FactoryBot.create(:membership, created_by: user) }
+
+          it "will not allow you to delete a membership" do
+            expect(subject).to be_forbidden
+          end
+        end
       end
-    end
 
-    context "when user signed in" do
-      it "will not allow a guest to delete a membership" do
-        sign_in guest
-        expect(subject).to be_forbidden
+      context "as a manager" do
+        let(:user) { FactoryBot.create(:user, :manager) }
+
+        context "with a membership not belonging to the signed in user" do
+          let(:membership) { FactoryBot.create(:membership) }
+
+          it "will not allow you to delete a membership" do
+            expect(subject).to be_forbidden
+          end
+        end
+
+        context "with a membership belonging to the signed in user" do
+          let(:membership) { FactoryBot.create(:membership, created_by: user) }
+
+          it "will allow you to delete a membership" do
+            expect(subject).to be_no_content
+          end
+        end
       end
 
-      it "will not allow an analyst to delete a membership" do
-        sign_in analyst
-        expect(subject).to be_forbidden
+      context "as a coordinator" do
+        let(:user) { FactoryBot.create(:user, :coordinator) }
+
+        context "with a membership not belonging to the signed in user" do
+          let(:membership) { FactoryBot.create(:membership) }
+
+          it "will not allow you to delete a membership" do
+            expect(subject).to be_forbidden
+          end
+        end
+
+        context "with a membership belonging to the signed in user" do
+          let(:membership) { FactoryBot.create(:membership, created_by: user) }
+
+          it "will allow you to delete a membership" do
+            expect(subject).to be_no_content
+          end
+        end
       end
 
-      it "will allow a manager to delete a membership" do
-        sign_in manager
-        expect(subject).to be_no_content
-      end
+      context "as an admin" do
+        let(:user) { FactoryBot.create(:user, :admin) }
 
-      it "will allow a coordinator to delete a membership" do
-        sign_in coordinator
-        expect(subject).to be_no_content
+        context "with a membership not belonging to the signed in user" do
+          let(:membership) { FactoryBot.create(:membership) }
+
+          it "will allow you to delete a membership" do
+            expect(subject).to be_no_content
+          end
+        end
+
+        context "with a membership belonging to the signed in user" do
+          let(:membership) { FactoryBot.create(:membership, created_by: user) }
+
+          it "will allow you to delete a membership" do
+            expect(subject).to be_no_content
+          end
+        end
       end
     end
   end

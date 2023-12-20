@@ -1,8 +1,9 @@
 require "rails_helper"
 require "json"
 
-RSpec.describe MeasureActorsController, type: :controller do
+RSpec.describe ActorMeasuresController, type: :controller do
   let(:analyst) { FactoryBot.create(:user, :analyst) }
+  let(:coordinator) { FactoryBot.create(:user, :coordinator) }
   let(:guest) { FactoryBot.create(:user) }
   let(:user) { FactoryBot.create(:user, :manager) }
 
@@ -41,8 +42,8 @@ RSpec.describe MeasureActorsController, type: :controller do
   end
 
   describe "Get show" do
-    let(:measure_actor) { FactoryBot.create(:measure_actor) }
-    subject { get :show, params: {id: measure_actor}, format: :json }
+    let(:actor_measure) { FactoryBot.create(:actor_measure) }
+    subject { get :show, params: {id: actor_measure}, format: :json }
 
     context "when not signed in" do
       it { expect(subject).to be_forbidden }
@@ -76,32 +77,39 @@ RSpec.describe MeasureActorsController, type: :controller do
   end
 
   describe "PUT update" do
-    let(:measure_actor) { FactoryBot.create(:measure_actor) }
+    let(:actor_measure) { FactoryBot.create(:actor_measure) }
     subject do
       put :update,
         format: :json,
-        params: {id: measure_actor,
-                 measure_actor: {value: "4.2"}}
+        params: {id: actor_measure,
+                 actor_measure: {value: "4.2"}}
     end
 
     context "when not signed in" do
-      it "not allow updating a measure_actor" do
+      it "not allow updating an actor_measure" do
         expect(subject).to be_unauthorized
       end
     end
 
     context "when user signed in" do
-      it "will not allow a guest to update a measure_actor" do
+      it "will not allow a guest to update an actor_measure" do
         sign_in guest
         expect(subject).to be_forbidden
       end
 
-      it "will not allow an analyst to update an measure_actor" do
+      it "will not allow an analyst to update an actor_measure" do
         sign_in analyst
         expect(subject).to be_forbidden
       end
 
-      it "will allow a manager to update a measure_actor" do
+      it "will allow a coordinator to update an actor_measure" do
+        sign_in coordinator
+        expect(subject).to be_ok
+        json = JSON.parse(response.body)
+        expect(json.dig("data", "attributes", "value")).to eq("4.2")
+      end
+
+      it "will allow a manager to update an actor_measure" do
         sign_in user
         expect(subject).to be_ok
         json = JSON.parse(subject.body)
@@ -110,15 +118,15 @@ RSpec.describe MeasureActorsController, type: :controller do
 
       it "will return an error if params are incorrect" do
         sign_in user
-        put :update, format: :json, params: {id: measure_actor,
-                                             measure_actor: {actor_id: 999}}
+        put :update, format: :json, params: {id: actor_measure,
+                                             actor_measure: {actor_id: 999}}
         expect(response).to have_http_status(422)
       end
     end
   end
 
   describe "Delete destroy" do
-    let(:subject) { delete :destroy, format: :json, params: {id: measure_actor} }
+    let(:subject) { delete :destroy, format: :json, params: {id: actor_measure} }
 
     context "when signed in" do
       before { sign_in user }
@@ -126,18 +134,18 @@ RSpec.describe MeasureActorsController, type: :controller do
       context "as a guest" do
         let(:user) { FactoryBot.create(:user) }
 
-        context "with a measure_actor not belonging to the signed in user" do
-          let(:measure_actor) { FactoryBot.create(:measure_actor) }
+        context "with an actor_measure not belonging to the signed in user" do
+          let(:actor_measure) { FactoryBot.create(:actor_measure) }
 
-          it "will not allow you to delete a measure_actor" do
+          it "will not allow you to delete an actor_measure" do
             expect(subject).to be_forbidden
           end
         end
 
-        context "with a measure_actor belonging to the signed in user" do
-          let(:measure_actor) { FactoryBot.create(:measure_actor, created_by: user) }
+        context "with an actor_measure belonging to the signed in user" do
+          let(:actor_measure) { FactoryBot.create(:actor_measure, created_by: user) }
 
-          it "will not allow you to delete a measure_actor" do
+          it "will not allow you to delete an actor_measure" do
             expect(subject).to be_forbidden
           end
         end
@@ -146,18 +154,18 @@ RSpec.describe MeasureActorsController, type: :controller do
       context "as a manager" do
         let(:user) { FactoryBot.create(:user, :manager) }
 
-        context "with a measure_actor not belonging to the signed in user" do
-          let(:measure_actor) { FactoryBot.create(:measure_actor) }
+        context "with an actor_measure not belonging to the signed in user" do
+          let(:actor_measure) { FactoryBot.create(:actor_measure) }
 
-          it "will not allow you to delete a measure_actor" do
+          it "will not allow you to delete an actor_measure" do
             expect(subject).to be_forbidden
           end
         end
 
-        context "with a measure_actor belonging to the signed in user" do
-          let(:measure_actor) { FactoryBot.create(:measure_actor, created_by: user) }
+        context "with an actor_measure belonging to the signed in user" do
+          let(:actor_measure) { FactoryBot.create(:actor_measure, created_by: user) }
 
-          it "will allow you to delete a measure_actor" do
+          it "will allow you to delete an actor_measure" do
             expect(subject).to be_no_content
           end
         end
@@ -166,18 +174,18 @@ RSpec.describe MeasureActorsController, type: :controller do
       context "as a coordinator" do
         let(:user) { FactoryBot.create(:user, :coordinator) }
 
-        context "with a measure_actor not belonging to the signed in user" do
-          let(:measure_actor) { FactoryBot.create(:measure_actor) }
+        context "with an actor_measure not belonging to the signed in user" do
+          let(:actor_measure) { FactoryBot.create(:actor_measure) }
 
-          it "will not allow you to delete a measure_actor" do
+          it "will not allow you to delete an actor_measure" do
             expect(subject).to be_forbidden
           end
         end
 
-        context "with a measure_actor belonging to the signed in user" do
-          let(:measure_actor) { FactoryBot.create(:measure_actor, created_by: user) }
+        context "with an actor_measure belonging to the signed in user" do
+          let(:actor_measure) { FactoryBot.create(:actor_measure, created_by: user) }
 
-          it "will allow you to delete a measure_actor" do
+          it "will allow you to delete an actor_measure" do
             expect(subject).to be_no_content
           end
         end
@@ -186,18 +194,18 @@ RSpec.describe MeasureActorsController, type: :controller do
       context "as an admin" do
         let(:user) { FactoryBot.create(:user, :admin) }
 
-        context "with a measure_actor not belonging to the signed in user" do
-          let(:measure_actor) { FactoryBot.create(:measure_actor) }
+        context "with an actor_measure not belonging to the signed in user" do
+          let(:actor_measure) { FactoryBot.create(:actor_measure) }
 
-          it "will allow you to delete a measure_actor" do
+          it "will allow you to delete an actor_measure" do
             expect(subject).to be_no_content
           end
         end
 
-        context "with a measure_actor belonging to the signed in user" do
-          let(:measure_actor) { FactoryBot.create(:measure_actor, created_by: user) }
+        context "with an actor_measure belonging to the signed in user" do
+          let(:actor_measure) { FactoryBot.create(:actor_measure, created_by: user) }
 
-          it "will allow you to delete a measure_actor" do
+          it "will allow you to delete an actor_measure" do
             expect(subject).to be_no_content
           end
         end

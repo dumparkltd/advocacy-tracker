@@ -1,6 +1,4 @@
 class UserMeasuresController < ApplicationController
-  before_action :set_and_authorize_user_measure, only: [:show, :update, :destroy]
-
   # GET /user_measures
   def index
     @user_measures = policy_scope(base_object).order(created_at: :desc).page(params[:page])
@@ -46,9 +44,10 @@ class UserMeasuresController < ApplicationController
   private
 
   # Use callbacks to share common setup or constraints between actions.
-  def set_and_authorize_user_measure
-    @user_measure = policy_scope(base_object).find(params[:id])
-    authorize @user_measure
+  def authorize!
+    @user_measure = policy_scope(base_object).find(params[:id]) if params[:id]
+
+    authorize @user_measure || base_object
   end
 
   def base_object

@@ -69,33 +69,89 @@ RSpec.describe RecommendationRecommendationsController, type: :controller do
   end
 
   describe "Delete destroy" do
-    let(:recommendation_recommendation) { FactoryBot.create(:recommendation_recommendation) }
-    subject { delete :destroy, format: :json, params: {id: recommendation_recommendation} }
-
-    context "when not signed in" do
-      it "not allow deleting a recommendation_recommendation" do
-        expect(subject).to be_unauthorized
-      end
-    end
+    let(:subject) { delete :destroy, format: :json, params: {id: recommendation_recommendation} }
 
     context "when signed in" do
-      let(:guest) { FactoryBot.create(:user) }
-      let(:manager) { FactoryBot.create(:user, :manager) }
-      let(:admin) { FactoryBot.create(:user, :admin) }
+      before { sign_in user }
 
-      it "will not allow a guest to delete a recommendation_recommendation" do
-        sign_in guest
-        expect(subject).to be_forbidden
+      context "as a guest" do
+        let(:user) { FactoryBot.create(:user) }
+
+        context "with a recommendation_recommendation not belonging to the signed in user" do
+          let(:recommendation_recommendation) { FactoryBot.create(:recommendation_recommendation) }
+
+          it "will not allow you to delete a recommendation_recommendation" do
+            expect(subject).to be_forbidden
+          end
+        end
+
+        context "with a recommendation_recommendation belonging to the signed in user" do
+          let(:recommendation_recommendation) { FactoryBot.create(:recommendation_recommendation, created_by: user) }
+
+          it "will not allow you to delete a recommendation_recommendation" do
+            expect(subject).to be_forbidden
+          end
+        end
       end
 
-      it "will allow a manager to delete a recommendation_recommendation" do
-        sign_in manager
-        expect(subject).to be_no_content
+      context "as a manager" do
+        let(:user) { FactoryBot.create(:user, :manager) }
+
+        context "with a recommendation_recommendation not belonging to the signed in user" do
+          let(:recommendation_recommendation) { FactoryBot.create(:recommendation_recommendation) }
+
+          it "will not allow you to delete a recommendation_recommendation" do
+            expect(subject).to be_forbidden
+          end
+        end
+
+        context "with a recommendation_recommendation belonging to the signed in user" do
+          let(:recommendation_recommendation) { FactoryBot.create(:recommendation_recommendation, created_by: user) }
+
+          it "will allow you to delete a recommendation_recommendation" do
+            expect(subject).to be_no_content
+          end
+        end
       end
 
-      it "will allow an admin to delete a recommendation_recommendation" do
-        sign_in admin
-        expect(subject).to be_no_content
+      context "as a coordinator" do
+        let(:user) { FactoryBot.create(:user, :coordinator) }
+
+        context "with a recommendation_recommendation not belonging to the signed in user" do
+          let(:recommendation_recommendation) { FactoryBot.create(:recommendation_recommendation) }
+
+          it "will not allow you to delete a recommendation_recommendation" do
+            expect(subject).to be_forbidden
+          end
+        end
+
+        context "with a recommendation_recommendation belonging to the signed in user" do
+          let(:recommendation_recommendation) { FactoryBot.create(:recommendation_recommendation, created_by: user) }
+
+          it "will allow you to delete a recommendation_recommendation" do
+            expect(subject).to be_no_content
+          end
+        end
+      end
+
+      context "as an admin" do
+        let(:user) { FactoryBot.create(:user, :admin) }
+
+        context "with a recommendation_recommendation not belonging to the signed in user" do
+          let(:recommendation_recommendation) { FactoryBot.create(:recommendation_recommendation) }
+
+          it "will allow you to delete a recommendation_recommendation" do
+            expect(subject).to be_no_content
+          end
+        end
+
+        context "with a recommendation_recommendation belonging to the signed in user" do
+          let(:recommendation_recommendation) { FactoryBot.create(:recommendation_recommendation, created_by: user) }
+
+          it "will allow you to delete a recommendation_recommendation" do
+            expect(subject).to be_no_content
+          end
+        end
       end
     end
   end

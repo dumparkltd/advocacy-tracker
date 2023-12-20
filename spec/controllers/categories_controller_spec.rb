@@ -336,36 +336,89 @@ RSpec.describe CategoriesController, type: :controller do
   end
 
   describe "Delete destroy" do
-    let(:category) { FactoryBot.create(:category) }
-    subject { delete :destroy, format: :json, params: {id: category} }
+    let(:subject) { delete :destroy, format: :json, params: {id: category} }
 
-    context "when not signed in" do
-      it "not allow deleting a category" do
-        expect(subject).to be_unauthorized
+    context "when signed in" do
+      before { sign_in user }
+
+      context "as a guest" do
+        let(:user) { FactoryBot.create(:user) }
+
+        context "with a category not belonging to the signed in user" do
+          let(:category) { FactoryBot.create(:category) }
+
+          it "will not allow you to delete a category" do
+            expect(subject).to be_forbidden
+          end
+        end
+
+        context "with a category belonging to the signed in user" do
+          let(:category) { FactoryBot.create(:category, created_by: user) }
+
+          it "will not allow you to delete a category" do
+            expect(subject).to be_forbidden
+          end
+        end
       end
-    end
 
-    context "when user signed in" do
-      it "will not allow a guest to delete a category" do
-        sign_in guest
-        expect(subject).to be_forbidden
+      context "as a manager" do
+        let(:user) { FactoryBot.create(:user, :manager) }
+
+        context "with a category not belonging to the signed in user" do
+          let(:category) { FactoryBot.create(:category) }
+
+          it "will not allow you to delete a category" do
+            expect(subject).to be_forbidden
+          end
+        end
+
+        context "with a category belonging to the signed in user" do
+          let(:category) { FactoryBot.create(:category, created_by: user) }
+
+          it "will allow you to delete a category" do
+            expect(subject).to be_no_content
+          end
+        end
       end
 
-      it "will not allow an analyst to delete a category" do
-        sign_in analyst
-        expect(subject).to be_forbidden
+      context "as a coordinator" do
+        let(:user) { FactoryBot.create(:user, :coordinator) }
+
+        context "with a category not belonging to the signed in user" do
+          let(:category) { FactoryBot.create(:category) }
+
+          it "will not allow you to delete a category" do
+            expect(subject).to be_forbidden
+          end
+        end
+
+        context "with a category belonging to the signed in user" do
+          let(:category) { FactoryBot.create(:category, created_by: user) }
+
+          it "will allow you to delete a category" do
+            expect(subject).to be_no_content
+          end
+        end
       end
 
-      it "will allow a manager to delete a category" do
-        sign_in manager
-        expect(subject).to be_no_content
-      end
+      context "as an admin" do
+        let(:user) { FactoryBot.create(:user, :admin) }
 
-      it "response with success when versioned", versioning: true do
-        expect(PaperTrail).to be_enabled
-        category.update_attribute(:title, "something else")
-        sign_in manager
-        expect(subject.response_code).to eq(204)
+        context "with a category not belonging to the signed in user" do
+          let(:category) { FactoryBot.create(:category) }
+
+          it "will allow you to delete a category" do
+            expect(subject).to be_no_content
+          end
+        end
+
+        context "with a category belonging to the signed in user" do
+          let(:category) { FactoryBot.create(:category, created_by: user) }
+
+          it "will allow you to delete a category" do
+            expect(subject).to be_no_content
+          end
+        end
       end
     end
   end

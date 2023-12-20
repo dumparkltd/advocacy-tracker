@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 class ProgressReportsController < ApplicationController
-  before_action :set_and_authorize_progress_report, only: [:show, :update, :destroy]
-
   # GET /progress_reports
   def index
     @progress_reports = policy_scope(base_object).order(created_at: :desc).page(params[:page])
@@ -35,7 +33,6 @@ class ProgressReportsController < ApplicationController
       return render json: '{"error":"Record outdated"}', status: :unprocessable_entity
     end
     if @progress_report.update!(permitted_attributes(@progress_report))
-      set_and_authorize_progress_report
       render json: serialize(@progress_report)
     end
   end
@@ -48,9 +45,10 @@ class ProgressReportsController < ApplicationController
   private
 
   # Use callbacks to share common setup or constraints between actions.
-  def set_and_authorize_progress_report
-    @progress_report = policy_scope(base_object).find(params[:id])
-    authorize @progress_report
+  def authorize!
+    @progress_report = policy_scope(base_object)&.find(params[:id]) if params[:id]
+
+    authorize @progress_report || base_object
   end
 
   def base_object

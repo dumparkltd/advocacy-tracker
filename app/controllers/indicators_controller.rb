@@ -1,6 +1,4 @@
 class IndicatorsController < ApplicationController
-  before_action :set_and_authorize_indicator, only: [:show, :update, :destroy]
-
   # GET /indicators
   def index
     @indicators = policy_scope(base_object).order(created_at: :desc).page(params[:page])
@@ -33,8 +31,8 @@ class IndicatorsController < ApplicationController
     if params[:indicator][:updated_at] && DateTime.parse(params[:indicator][:updated_at]).to_i != @indicator.updated_at.to_i
       return render json: '{"error":"Record outdated"}', status: :unprocessable_entity
     end
+
     if @indicator.update!(permitted_attributes(@indicator))
-      set_and_authorize_indicator
       render json: serialize(@indicator)
     end
   end
@@ -46,18 +44,19 @@ class IndicatorsController < ApplicationController
 
   private
 
+  # Use callbacks to share common setup or constraints between actions.
+  def authorize!
+    @indicator = policy_scope(base_object)&.find(params[:id]) if params[:id]
+
+    authorize @indicator || base_object
+  end
+
   def base_object
     if params[:measure_id]
       Measure.find(params[:measure_id]).indicators
     else
       Indicator
     end
-  end
-
-  # Use callbacks to share common setup or constraints between actions.
-  def set_and_authorize_indicator
-    @indicator = policy_scope(base_object).find(params[:id])
-    authorize @indicator
   end
 
   def serialize(target, serializer: IndicatorSerializer)

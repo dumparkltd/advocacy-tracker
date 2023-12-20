@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 class RecommendationsController < ApplicationController
-  before_action :set_and_authorize_recommendation, only: [:show, :update, :destroy]
-
   # GET /recommendations
   def index
     @recommendations = policy_scope(base_object).order(created_at: :desc).page(params[:page])
@@ -35,7 +33,6 @@ class RecommendationsController < ApplicationController
       return render json: '{"error":"Record outdated"}', status: :unprocessable_entity
     end
     if @recommendation.update!(permitted_attributes(@recommendation))
-      set_and_authorize_recommendation
       render json: serialize(@recommendation)
     end
   end
@@ -47,6 +44,13 @@ class RecommendationsController < ApplicationController
 
   private
 
+  # Use callbacks to share common setup or constraints between actions.
+  def authorize!
+    @recommendation = policy_scope(base_object)&.find(params[:id]) if params[:id]
+
+    authorize @recommendation || base_object
+  end
+
   def base_object
     if params[:category_id]
       Category.find(params[:category_id]).recommendations
@@ -55,12 +59,6 @@ class RecommendationsController < ApplicationController
     else
       Recommendation
     end
-  end
-
-  # Use callbacks to share common setup or constraints between actions.
-  def set_and_authorize_recommendation
-    @recommendation = policy_scope(base_object).find(params[:id])
-    authorize @recommendation
   end
 
   def serialize(target, serializer: RecommendationSerializer)
