@@ -1,6 +1,4 @@
 class MeasureMeasuresController < ApplicationController
-  before_action :set_and_authorize_measure_measure, only: [:show, :update, :destroy]
-
   # GET /measure_measures
   def index
     @measure_measures = policy_scope(base_object).order(created_at: :desc).page(params[:page])
@@ -42,9 +40,10 @@ class MeasureMeasuresController < ApplicationController
   private
 
   # Use callbacks to share common setup or constraints between actions.
-  def set_and_authorize_measure_measure
-    @measure_measure = policy_scope(base_object).find(params[:id])
-    authorize @measure_measure
+  def authorize!
+    @measure_measure = policy_scope(base_object)&.find(params[:id]) if params[:id]
+
+    authorize @measure_measure || base_object
   end
 
   def base_object

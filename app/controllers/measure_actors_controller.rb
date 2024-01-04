@@ -1,6 +1,4 @@
 class MeasureActorsController < ApplicationController
-  before_action :set_and_authorize_measure_actor, only: [:show, :update, :destroy]
-
   # GET /measure_actors/:id
   def show
     @measure_actor = policy_scope(base_object).find(params[:id])
@@ -36,7 +34,6 @@ class MeasureActorsController < ApplicationController
   # PATCH/PUT /actor_categories/1
   def update
     if @measure_actor.update!(permitted_attributes(@measure_actor))
-      set_and_authorize_measure_actor
       render json: serialize(@measure_actor)
     end
   end
@@ -44,9 +41,10 @@ class MeasureActorsController < ApplicationController
   private
 
   # Use callbacks to share common setup or constraints between actions.
-  def set_and_authorize_measure_actor
-    @measure_actor = policy_scope(base_object).find(params[:id])
-    authorize @measure_actor
+  def authorize!
+    @measure_actor = policy_scope(base_object)&.find(params[:id]) if params[:id]
+
+    authorize @measure_actor || base_object
   end
 
   def base_object

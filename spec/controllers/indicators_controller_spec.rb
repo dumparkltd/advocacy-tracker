@@ -155,7 +155,7 @@ RSpec.describe IndicatorsController, type: :controller do
 
   describe "Post create" do
     context "when not signed in" do
-      it "not allow creating a indicator" do
+      it "not allow creating an indicator" do
         post :create, format: :json, params: {indicator: {title: "test", description: "test", target_date: "today"}}
         expect(response).to be_unauthorized
       end
@@ -175,12 +175,12 @@ RSpec.describe IndicatorsController, type: :controller do
 
       subject { post :create, format: :json, params: params }
 
-      it "will not allow a guest to create a indicator" do
+      it "will not allow a guest to create an indicator" do
         sign_in guest
         expect(subject).to be_forbidden
       end
 
-      it "will allow a manager to create a indicator" do
+      it "will allow a manager to create an indicator" do
         sign_in manager
         expect(subject).to be_created
       end
@@ -235,18 +235,18 @@ RSpec.describe IndicatorsController, type: :controller do
     end
 
     context "when not signed in" do
-      it "not allow updating a indicator" do
+      it "not allow updating an indicator" do
         expect(subject).to be_unauthorized
       end
     end
 
     context "when user signed in" do
-      it "will not allow a guest to update a indicator" do
+      it "will not allow a guest to update an indicator" do
         sign_in guest
         expect(subject).to be_forbidden
       end
 
-      it "will allow a manager to update a indicator" do
+      it "will allow a manager to update an indicator" do
         sign_in manager
         expect(subject).to be_ok
       end
@@ -313,24 +313,89 @@ RSpec.describe IndicatorsController, type: :controller do
   end
 
   describe "Delete destroy" do
-    let(:indicator) { FactoryBot.create(:indicator) }
-    subject { delete :destroy, format: :json, params: {id: indicator} }
+    let(:subject) { delete :destroy, format: :json, params: {id: indicator} }
 
-    context "when not signed in" do
-      it "not allow deleting a indicator" do
-        expect(subject).to be_unauthorized
+    context "when signed in" do
+      before { sign_in user }
+
+      context "as a guest" do
+        let(:user) { FactoryBot.create(:user) }
+
+        context "with an indicator not belonging to the signed in user" do
+          let(:indicator) { FactoryBot.create(:indicator) }
+
+          it "will not allow you to delete an indicator" do
+            expect(subject).to be_forbidden
+          end
+        end
+
+        context "with an indicator belonging to the signed in user" do
+          let(:indicator) { FactoryBot.create(:indicator, created_by: user) }
+
+          it "will not allow you to delete an indicator" do
+            expect(subject).to be_forbidden
+          end
+        end
       end
-    end
 
-    context "when user signed in" do
-      it "will not allow a guest to delete a indicator" do
-        sign_in guest
-        expect(subject).to be_forbidden
+      context "as a manager" do
+        let(:user) { FactoryBot.create(:user, :manager) }
+
+        context "with an indicator not belonging to the signed in user" do
+          let(:indicator) { FactoryBot.create(:indicator) }
+
+          it "will not allow you to delete an indicator" do
+            expect(subject).to be_forbidden
+          end
+        end
+
+        context "with an indicator belonging to the signed in user" do
+          let(:indicator) { FactoryBot.create(:indicator, created_by: user) }
+
+          it "will allow you to delete an indicator" do
+            expect(subject).to be_no_content
+          end
+        end
       end
 
-      it "will allow a manager to delete a indicator" do
-        sign_in manager
-        expect(subject).to be_no_content
+      context "as a coordinator" do
+        let(:user) { FactoryBot.create(:user, :coordinator) }
+
+        context "with an indicator not belonging to the signed in user" do
+          let(:indicator) { FactoryBot.create(:indicator) }
+
+          it "will not allow you to delete an indicator" do
+            expect(subject).to be_forbidden
+          end
+        end
+
+        context "with an indicator belonging to the signed in user" do
+          let(:indicator) { FactoryBot.create(:indicator, created_by: user) }
+
+          it "will allow you to delete an indicator" do
+            expect(subject).to be_no_content
+          end
+        end
+      end
+
+      context "as an admin" do
+        let(:user) { FactoryBot.create(:user, :admin) }
+
+        context "with an indicator not belonging to the signed in user" do
+          let(:indicator) { FactoryBot.create(:indicator) }
+
+          it "will allow you to delete an indicator" do
+            expect(subject).to be_no_content
+          end
+        end
+
+        context "with an indicator belonging to the signed in user" do
+          let(:indicator) { FactoryBot.create(:indicator, created_by: user) }
+
+          it "will allow you to delete an indicator" do
+            expect(subject).to be_no_content
+          end
+        end
       end
     end
   end

@@ -1,6 +1,6 @@
 class DueDatesController < ApplicationController
   before_action :set_and_authorize_due_date, only: [:show, :update, :destroy]
-  skip_before_action :authorize_base_object!
+  skip_before_action :authorize!
 
   # GET /due_dates
   def index

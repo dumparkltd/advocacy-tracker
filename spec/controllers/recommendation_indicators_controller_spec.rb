@@ -75,35 +75,90 @@ RSpec.describe RecommendationIndicatorsController, type: :controller do
     end
   end
 
-  describe "destroy" do
-    let(:recommendation_indicator) { FactoryBot.create(:recommendation_indicator) }
-    subject { delete :destroy, format: :json, params: {id: recommendation_indicator} }
-
-    context "when not signed in" do
-      it "wont allow deleting a recommendation_indicator" do
-        expect(subject).to be_unauthorized
-      end
-    end
+  describe "Delete destroy" do
+    let(:subject) { delete :destroy, format: :json, params: {id: recommendation_indicator} }
 
     context "when signed in" do
-      it "wont allow a guest to delete a recommendation_indicator" do
-        sign_in guest
-        expect(subject).to be_forbidden
+      before { sign_in user }
+
+      context "as a guest" do
+        let(:user) { FactoryBot.create(:user) }
+
+        context "with a recommendation_indicator not belonging to the signed in user" do
+          let(:recommendation_indicator) { FactoryBot.create(:recommendation_indicator) }
+
+          it "will not allow you to delete a recommendation_indicator" do
+            expect(subject).to be_forbidden
+          end
+        end
+
+        context "with a recommendation_indicator belonging to the signed in user" do
+          let(:recommendation_indicator) { FactoryBot.create(:recommendation_indicator, created_by: user) }
+
+          it "will not allow you to delete a recommendation_indicator" do
+            expect(subject).to be_forbidden
+          end
+        end
       end
 
-      it "will allow a manager to delete a recommendation_indicator" do
-        sign_in manager
-        expect(subject).to be_no_content
+      context "as a manager" do
+        let(:user) { FactoryBot.create(:user, :manager) }
+
+        context "with a recommendation_indicator not belonging to the signed in user" do
+          let(:recommendation_indicator) { FactoryBot.create(:recommendation_indicator) }
+
+          it "will not allow you to delete a recommendation_indicator" do
+            expect(subject).to be_forbidden
+          end
+        end
+
+        context "with a recommendation_indicator belonging to the signed in user" do
+          let(:recommendation_indicator) { FactoryBot.create(:recommendation_indicator, created_by: user) }
+
+          it "will allow you to delete a recommendation_indicator" do
+            expect(subject).to be_no_content
+          end
+        end
       end
 
-      it "will allow a coordinator to delete a recommendation_indicator" do
-        sign_in coordinator
-        expect(subject).to be_no_content
+      context "as a coordinator" do
+        let(:user) { FactoryBot.create(:user, :coordinator) }
+
+        context "with a recommendation_indicator not belonging to the signed in user" do
+          let(:recommendation_indicator) { FactoryBot.create(:recommendation_indicator) }
+
+          it "will not allow you to delete a recommendation_indicator" do
+            expect(subject).to be_forbidden
+          end
+        end
+
+        context "with a recommendation_indicator belonging to the signed in user" do
+          let(:recommendation_indicator) { FactoryBot.create(:recommendation_indicator, created_by: user) }
+
+          it "will allow you to delete a recommendation_indicator" do
+            expect(subject).to be_no_content
+          end
+        end
       end
 
-      it "will allow an admin to delete a recommendation_indicator" do
-        sign_in admin
-        expect(subject).to be_no_content
+      context "as an admin" do
+        let(:user) { FactoryBot.create(:user, :admin) }
+
+        context "with a recommendation_indicator not belonging to the signed in user" do
+          let(:recommendation_indicator) { FactoryBot.create(:recommendation_indicator) }
+
+          it "will allow you to delete a recommendation_indicator" do
+            expect(subject).to be_no_content
+          end
+        end
+
+        context "with a recommendation_indicator belonging to the signed in user" do
+          let(:recommendation_indicator) { FactoryBot.create(:recommendation_indicator, created_by: user) }
+
+          it "will allow you to delete a recommendation_indicator" do
+            expect(subject).to be_no_content
+          end
+        end
       end
     end
   end

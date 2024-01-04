@@ -1,6 +1,4 @@
 class MeasureCategoriesController < ApplicationController
-  before_action :set_and_authorize_measure_category, only: [:show, :update, :destroy]
-
   # GET /measure_categories
   def index
     @measure_categories = policy_scope(base_object).order(created_at: :desc).page(params[:page])
@@ -30,7 +28,6 @@ class MeasureCategoriesController < ApplicationController
   # PATCH/PUT /measure_categories/1
   def update
     if @measure_category.update!(permitted_attributes(@measure_category))
-      set_and_authorize_measure_category
       render json: serialize(@measure_category)
     end
   end
@@ -43,9 +40,10 @@ class MeasureCategoriesController < ApplicationController
   private
 
   # Use callbacks to share common setup or constraints between actions.
-  def set_and_authorize_measure_category
-    @measure_category = policy_scope(base_object).find(params[:id])
-    authorize @measure_category
+  def authorize!
+    @measure_category = policy_scope(base_object)&.find(params[:id]) if params[:id]
+
+    authorize @measure_category || base_object
   end
 
   def base_object

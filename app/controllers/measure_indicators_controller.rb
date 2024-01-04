@@ -1,6 +1,4 @@
 class MeasureIndicatorsController < ApplicationController
-  before_action :set_and_authorize_measure_indicator, only: [:show, :update, :destroy]
-
   # GET /measure_indicators
   def index
     @measure_indicators = policy_scope(base_object).order(created_at: :desc).page(params[:page])
@@ -30,7 +28,6 @@ class MeasureIndicatorsController < ApplicationController
   # PATCH/PUT /measure_indicators/1
   def update
     if @measure_indicator.update!(permitted_attributes(@measure_indicator))
-      set_and_authorize_measure_indicator
       render json: serialize(@measure_indicator)
     end
   end
@@ -43,9 +40,10 @@ class MeasureIndicatorsController < ApplicationController
   private
 
   # Use callbacks to share common setup or constraints between actions.
-  def set_and_authorize_measure_indicator
-    @measure_indicator = policy_scope(base_object).find(params[:id])
-    authorize @measure_indicator
+  def authorize!
+    @measure_indicator = policy_scope(base_object)&.find(params[:id]) if params[:id]
+
+    authorize @measure_indicator || base_object
   end
 
   def base_object
