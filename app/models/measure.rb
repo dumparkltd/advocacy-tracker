@@ -48,7 +48,7 @@ class Measure < VersionedRecord
   end
 
   def notifiable_user_measures(user_id:)
-    user_measures.reject { |um| um.user.id == user_id }
+    user_measures.where.not(user_id: user_id)
   end
 
   after_commit :queue_task_updated_notifications!,
@@ -61,8 +61,24 @@ class Measure < VersionedRecord
     delete_existing_task_notifications!(user_id:)
 
     notifiable_user_measures(user_id:).each do |user_measure|
-      TaskNotificationJob.perform_in(ENV.fetch("TASK_NOTIFICATION_DELAY", 20).to_i.seconds, user_measure.id)
+      queue_task_updated_notification!(
+        user_id: user_measure.user_id,
+        measure_id: user_measure.measure_id,
+        delete_existing: false # this is already handled above by delete_existing_task_notifications!
+      )
     end
+  end
+
+  def queue_task_updated_notification!(user_id:, measure_id:, delete_existing: true)
+    return unless notify?
+
+    delete_existing_task_notifications!(user_id:) if delete_existing
+
+    TaskNotificationJob.perform_in(ENV.fetch("TASK_NOTIFICATION_DELAY", 20).to_i.seconds, user_id, measure_id)
+  end
+
+  def task?
+    measuretype&.notifications?
   end
 
   private
@@ -104,9 +120,5 @@ class Measure < VersionedRecord
 
   def relationship_updated?
     saved_change_to_attribute?(:relationship_updated_at)
-  end
-
-  def task?
-    measuretype&.notifications?
   end
 end
