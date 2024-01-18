@@ -231,7 +231,7 @@ RSpec.describe ActorsController, type: :controller do
   end
 
   describe "PUT update" do
-    let(:actor) { FactoryBot.create(:actor) }
+    let(:actor) { FactoryBot.create(:actor, :not_draft) }
     subject do
       put :update,
         format: :json,
@@ -327,34 +327,91 @@ RSpec.describe ActorsController, type: :controller do
     end
   end
 
-  describe "Delete destroy" do
+  describe "DELETE destroy" do
     let(:actor) { FactoryBot.create(:actor) }
     subject { delete :destroy, format: :json, params: {id: actor} }
 
-    context "when not signed in" do
-      it "not allow deleting an actor" do
-        expect(subject).to be_unauthorized
+    context "when signed in" do
+      before { sign_in user }
+
+      context "as a guest" do
+        let(:user) { FactoryBot.create(:user) }
+
+        context "with an actor not belonging to the signed in user" do
+          let(:actor) { FactoryBot.create(:actor) }
+
+          it "will not allow you to delete an actor" do
+            expect(subject).to be_forbidden
+          end
+        end
+
+        context "with an actor belonging to the signed in user" do
+          let(:actor) { FactoryBot.create(:actor, created_by: user) }
+
+          it "will not allow you to delete an actor" do
+            expect(subject).to be_forbidden
+          end
+        end
       end
-    end
 
-    context "when user signed in" do
-      let(:admin) { FactoryBot.create(:user, :admin) }
-      let(:guest) { FactoryBot.create(:user) }
-      let(:user) { FactoryBot.create(:user, :manager) }
+      context "as a manager" do
+        let(:user) { FactoryBot.create(:user, :manager) }
 
-      it "will not allow a guest to delete an actor" do
-        sign_in guest
-        expect(subject).to be_forbidden
+        context "with an actor not belonging to the signed in user" do
+          let(:actor) { FactoryBot.create(:actor) }
+
+          it "will not allow you to delete an actor" do
+            expect(subject).to be_forbidden
+          end
+        end
+
+        context "with an actor belonging to the signed in user" do
+          let(:actor) { FactoryBot.create(:actor, created_by: user) }
+
+          it "will allow you to delete an actor" do
+            expect(subject).to be_no_content
+          end
+        end
       end
 
-      it "will not allow a manager to delete an actor" do
-        sign_in manager
-        expect(subject).to be_forbidden
+      context "as a coordinator" do
+        let(:user) { FactoryBot.create(:user, :coordinator) }
+
+        context "with an actor not belonging to the signed in user" do
+          let(:actor) { FactoryBot.create(:actor) }
+
+          it "will not allow you to delete an actor" do
+            expect(subject).to be_forbidden
+          end
+        end
+
+        context "with an actor belonging to the signed in user" do
+          let(:actor) { FactoryBot.create(:actor, created_by: user) }
+
+          it "will allow you to delete an actor" do
+            expect(subject).to be_no_content
+          end
+        end
       end
 
-      it "will allow an admin to delete an actor" do
-        sign_in admin
-        expect(subject).to be_no_content
+      context "as an admin" do
+        let(:user) { FactoryBot.create(:user, :admin) }
+
+        context "with an actor not belonging to the signed in user" do
+          let(:actor) { FactoryBot.create(:actor) }
+
+          it "will allow you to delete an actor" do
+            expect(subject).to be_no_content
+          end
+        end
+
+        context "with an actor belonging to the signed in user" do
+          let(:actor) { FactoryBot.create(:actor, created_by: user) }
+
+          it "will allow you to delete an actor" do
+            expect(subject).to be_no_content
+          end
+        end
       end
     end
   end
