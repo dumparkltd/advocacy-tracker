@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 class MeasuresController < ApplicationController
-  before_action :set_and_authorize_measure, only: [:show, :update, :destroy]
-
   # GET /measures
   def index
     @measures = policy_scope(base_object).order(created_at: :desc).page(params[:page])
@@ -40,7 +38,6 @@ class MeasuresController < ApplicationController
       send_published_notification!(@measure) if originally_draft && !@measure.draft?
       @measure.queue_task_updated_notifications!(user_id: current_user.id)
 
-      set_and_authorize_measure
       render json: serialize(@measure)
     end
   end
@@ -75,9 +72,10 @@ class MeasuresController < ApplicationController
   end
 
   # Use callbacks to share common setup or constraints between actions.
-  def set_and_authorize_measure
-    @measure = policy_scope(base_object).find(params[:id])
-    authorize @measure
+  def authorize!
+    @measure = policy_scope(base_object)&.find(params[:id]) if params[:id]
+
+    authorize @measure || base_object
   end
 
   def serialize(target, serializer: MeasureSerializer)

@@ -1,6 +1,4 @@
 class RecommendationIndicatorsController < ApplicationController
-  before_action :set_and_authorize_recommendation_indicator, only: [:show, :destroy]
-
   def index
     @recommendation_indicators = policy_scope(base_object).order(created_at: :desc).page(params[:page])
     authorize @recommendation_indicators
@@ -30,9 +28,10 @@ class RecommendationIndicatorsController < ApplicationController
 
   private
 
-  def set_and_authorize_recommendation_indicator
-    @recommendation_indicator = policy_scope(base_object).find(params[:id])
-    authorize @recommendation_indicator
+  def authorize!
+    @recommendation_indicator = policy_scope(base_object)&.find(params[:id]) if params[:id]
+
+    authorize @recommendation_indicator || base_object
   end
 
   def base_object

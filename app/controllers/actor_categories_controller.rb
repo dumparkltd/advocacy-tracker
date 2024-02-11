@@ -1,6 +1,4 @@
 class ActorCategoriesController < ApplicationController
-  before_action :set_and_authorize_actor_category, only: [:show, :destroy]
-
   # GET /actor_categories
   def index
     @actor_categories = policy_scope(base_object).order(created_at: :desc).page(params[:page])
@@ -35,9 +33,10 @@ class ActorCategoriesController < ApplicationController
   private
 
   # Use callbacks to share common setup or constraints between actions.
-  def set_and_authorize_actor_category
-    @actor_category = policy_scope(base_object).find(params[:id])
-    authorize @actor_category
+  def authorize!
+    @actor_category = policy_scope(base_object)&.find(params[:id]) if params[:id]
+
+    authorize @actor_category || base_object
   end
 
   def base_object

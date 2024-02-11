@@ -25,6 +25,38 @@ RSpec.describe UserMeasure, type: :model do
       expect { subject }.to change { measure.reload.relationship_updated_at }
     end
 
+    context "when the measure is a task" do
+      let(:measure) { FactoryBot.create(:measure, measuretype: FactoryBot.create(:measuretype, notifications: true)) }
+
+      it "create does not send a task updated email to the user it was just assigned to" do
+        expect(TaskNotificationJob).not_to receive(:perform_in).with(anything, user.id, measure.id)
+        expect(measure).not_to receive(:queue_task_updated_notifications!)
+
+        subject
+      end
+
+      context "when there are other users assigned to the task" do
+        let(:other_user) { FactoryBot.create(:user) }
+
+        before do
+          FactoryBot.create(:user_measure, user: other_user, measure: measure)
+        end
+
+        it "create sends a task updated email to the other users assigned to it" do
+          expect(measure).not_to receive(:queue_task_updated_notifications!)
+          expect(measure).to receive(:queue_task_updated_notification!)
+            .with(user_id: other_user.id, measure_id: measure.id)
+            .and_call_original
+          expect(TaskNotificationJob).to receive(:perform_in)
+            .with(anything, other_user.id, measure.id)
+          expect(TaskNotificationJob).not_to receive(:perform_in)
+            .with(anything, user.id, measure.id)
+
+          subject
+        end
+      end
+    end
+
     it "update sets the relationship_updated_at on the user" do
       subject
       expect { subject.touch }.to change { user.reload.relationship_updated_at }

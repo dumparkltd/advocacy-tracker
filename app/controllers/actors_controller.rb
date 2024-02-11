@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 class ActorsController < ApplicationController
-  before_action :set_and_authorize_actor, only: [:show, :update, :destroy]
-
   # GET /actors
   def index
     @actors = policy_scope(base_object).order(created_at: :desc).page(params[:page])
@@ -35,7 +33,7 @@ class ActorsController < ApplicationController
       return render json: '{"error":"Record outdated"}', status: :unprocessable_entity
     end
     if @actor.update!(permitted_attributes(@actor))
-      set_and_authorize_actor
+
       render json: serialize(@actor)
     end
   end
@@ -52,10 +50,12 @@ class ActorsController < ApplicationController
   end
 
   # Use callbacks to share common setup or constraints between actions.
-  def set_and_authorize_actor
-    @actor = policy_scope(base_object).find(params[:id])
-    authorize @actor
+  def authorize!
+    @actor = policy_scope(base_object)&.find(params[:id]) if params[:id]
+
+    authorize @actor || base_object
   end
+
 
   def serialize(target, serializer: ActorSerializer)
     super

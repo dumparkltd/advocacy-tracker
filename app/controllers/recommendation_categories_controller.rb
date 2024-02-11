@@ -1,6 +1,4 @@
 class RecommendationCategoriesController < ApplicationController
-  before_action :set_and_authorize_recommendation_category, only: [:show, :update, :destroy]
-
   # GET /recommendation_categories
   def index
     @recommendation_categories = policy_scope(base_object).order(created_at: :desc).page(params[:page])
@@ -42,9 +40,10 @@ class RecommendationCategoriesController < ApplicationController
   private
 
   # Use callbacks to share common setup or constraints between actions.
-  def set_and_authorize_recommendation_category
-    @recommendation_category = policy_scope(base_object).find(params[:id])
-    authorize @recommendation_category
+  def authorize!
+    @recommendation_category = policy_scope(base_object)&.find(params[:id]) if params[:id]
+
+    authorize @recommendation_category || base_object
   end
 
   def base_object

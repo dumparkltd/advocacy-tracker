@@ -322,29 +322,89 @@ RSpec.describe ResourcesController, type: :controller do
   end
 
   describe "Delete destroy" do
-    let(:resource) { FactoryBot.create(:resource) }
-    subject { delete :destroy, format: :json, params: {id: resource} }
+    let(:subject) { delete :destroy, format: :json, params: {id: resource} }
 
-    context "when not signed in" do
-      it "not allow deleting a resource" do
-        expect(subject).to be_unauthorized
+    context "when signed in" do
+      before { sign_in user }
+
+      context "as a guest" do
+        let(:user) { FactoryBot.create(:user) }
+
+        context "with a resource not belonging to the signed in user" do
+          let(:resource) { FactoryBot.create(:resource) }
+
+          it "will not allow you to delete a resource" do
+            expect(subject).to be_forbidden
+          end
+        end
+
+        context "with a resource belonging to the signed in user" do
+          let(:resource) { FactoryBot.create(:resource, created_by: user) }
+
+          it "will not allow you to delete a resource" do
+            expect(subject).to be_forbidden
+          end
+        end
       end
-    end
 
-    context "when user signed in" do
-      it "will not allow a guest to delete a resource" do
-        sign_in guest
-        expect(subject).to be_forbidden
+      context "as a manager" do
+        let(:user) { FactoryBot.create(:user, :manager) }
+
+        context "with a resource not belonging to the signed in user" do
+          let(:resource) { FactoryBot.create(:resource) }
+
+          it "will not allow you to delete a resource" do
+            expect(subject).to be_forbidden
+          end
+        end
+
+        context "with a resource belonging to the signed in user" do
+          let(:resource) { FactoryBot.create(:resource, created_by: user) }
+
+          it "will allow you to delete a resource" do
+            expect(subject).to be_no_content
+          end
+        end
       end
 
-      it "will allow a manager to delete a resource" do
-        sign_in manager
-        expect(subject).to be_no_content
+      context "as a coordinator" do
+        let(:user) { FactoryBot.create(:user, :coordinator) }
+
+        context "with a resource not belonging to the signed in user" do
+          let(:resource) { FactoryBot.create(:resource) }
+
+          it "will not allow you to delete a resource" do
+            expect(subject).to be_forbidden
+          end
+        end
+
+        context "with a resource belonging to the signed in user" do
+          let(:resource) { FactoryBot.create(:resource, created_by: user) }
+
+          it "will allow you to delete a resource" do
+            expect(subject).to be_no_content
+          end
+        end
       end
 
-      it "will allow an admin to delete a resource" do
-        sign_in admin
-        expect(subject).to be_no_content
+      context "as an admin" do
+        let(:user) { FactoryBot.create(:user, :admin) }
+
+        context "with a resource not belonging to the signed in user" do
+          let(:resource) { FactoryBot.create(:resource) }
+
+          it "will allow you to delete a resource" do
+            expect(subject).to be_no_content
+          end
+        end
+
+        context "with a resource belonging to the signed in user" do
+          let(:resource) { FactoryBot.create(:resource, created_by: user) }
+
+          it "will allow you to delete a resource" do
+            expect(subject).to be_no_content
+          end
+        end
       end
     end
   end

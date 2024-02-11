@@ -391,7 +391,7 @@ RSpec.describe MeasuresController, type: :controller do
             let(:measure) { FactoryBot.create(:measure, :published, notifications: true) }
 
             it "notifies the user of an update to #{attr}" do
-              expect(TaskNotificationJob).to receive(:perform_in).with(ENV.fetch("TASK_NOTIFICATION_DELAY", 20).to_i.seconds, user_measure.id)
+              expect(TaskNotificationJob).to receive(:perform_in).with(ENV.fetch("TASK_NOTIFICATION_DELAY", 20).to_i.seconds, user_measure.user_id, user_measure.measure_id)
 
               put :update, format: :json, params: {id: measure, measure: {attr => "test"}}
             end
@@ -418,7 +418,7 @@ RSpec.describe MeasuresController, type: :controller do
 
             context "and is updated to not archived" do
               it "does notify the user of an update to #{attr}" do
-                expect(TaskNotificationJob).to receive(:perform_in).with(ENV.fetch("TASK_NOTIFICATION_DELAY", 20).to_i.seconds, user_measure.id)
+                expect(TaskNotificationJob).to receive(:perform_in).with(ENV.fetch("TASK_NOTIFICATION_DELAY", 20).to_i.seconds, user_measure.user_id, user_measure.measure_id)
 
                 put :update, format: :json, params: {id: measure, measure: {attr => "test", :is_archive => false}}
               end
@@ -556,24 +556,87 @@ RSpec.describe MeasuresController, type: :controller do
     let(:measure) { FactoryBot.create(:measure) }
     subject { delete :destroy, format: :json, params: {id: measure} }
 
-    context "when not signed in" do
-      it "not allow deleting a measure" do
-        expect(subject).to be_unauthorized
+    context "when signed in" do
+      before { sign_in user }
+
+      context "as a guest" do
+        let(:user) { FactoryBot.create(:user) }
+
+        context "with a measure not belonging to the signed in user" do
+          let(:measure) { FactoryBot.create(:measure) }
+
+          it "will not allow you to delete a measure" do
+            expect(subject).to be_forbidden
+          end
+        end
+
+        context "with a measure belonging to the signed in user" do
+          let(:measure) { FactoryBot.create(:measure, created_by: user) }
+
+          it "will not allow you to delete a measure" do
+            expect(subject).to be_forbidden
+          end
+        end
       end
-    end
 
-    context "when user signed in" do
-      let(:guest) { FactoryBot.create(:user) }
-      let(:user) { FactoryBot.create(:user, :manager) }
+      context "as a manager" do
+        let(:user) { FactoryBot.create(:user, :manager) }
 
-      it "will not allow a guest to delete a measure" do
-        sign_in guest
-        expect(subject).to be_forbidden
+        context "with a measure not belonging to the signed in user" do
+          let(:measure) { FactoryBot.create(:measure) }
+
+          it "will not allow you to delete a measure" do
+            expect(subject).to be_forbidden
+          end
+        end
+
+        context "with a measure belonging to the signed in user" do
+          let(:measure) { FactoryBot.create(:measure, created_by: user) }
+
+          it "will allow you to delete a measure" do
+            expect(subject).to be_no_content
+          end
+        end
       end
 
-      it "will allow a manager to delete a measure" do
-        sign_in manager
-        expect(subject).to be_no_content
+      context "as a coordinator" do
+        let(:user) { FactoryBot.create(:user, :coordinator) }
+
+        context "with a measure not belonging to the signed in user" do
+          let(:measure) { FactoryBot.create(:measure) }
+
+          it "will not allow you to delete a measure" do
+            expect(subject).to be_forbidden
+          end
+        end
+
+        context "with a measure belonging to the signed in user" do
+          let(:measure) { FactoryBot.create(:measure, created_by: user) }
+
+          it "will allow you to delete a measure" do
+            expect(subject).to be_no_content
+          end
+        end
+      end
+
+      context "as an admin" do
+        let(:user) { FactoryBot.create(:user, :admin) }
+
+        context "with a measure not belonging to the signed in user" do
+          let(:measure) { FactoryBot.create(:measure) }
+
+          it "will allow you to delete a measure" do
+            expect(subject).to be_no_content
+          end
+        end
+
+        context "with a measure belonging to the signed in user" do
+          let(:measure) { FactoryBot.create(:measure, created_by: user) }
+
+          it "will allow you to delete a measure" do
+            expect(subject).to be_no_content
+          end
+        end
       end
     end
   end

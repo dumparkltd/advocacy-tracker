@@ -103,27 +103,89 @@ RSpec.describe RecommendationMeasuresController, type: :controller do
   end
 
   describe "Delete destroy" do
-    let(:recommendation_measure) { FactoryBot.create(:recommendation_measure) }
-    subject { delete :destroy, format: :json, params: {id: recommendation_measure} }
+    let(:subject) { delete :destroy, format: :json, params: {id: recommendation_measure} }
 
-    context "when not signed in" do
-      it "not allow deleting a recommendation_measure" do
-        expect(subject).to be_unauthorized
+    context "when signed in" do
+      before { sign_in user }
+
+      context "as a guest" do
+        let(:user) { FactoryBot.create(:user) }
+
+        context "with a recommendation_measure not belonging to the signed in user" do
+          let(:recommendation_measure) { FactoryBot.create(:recommendation_measure) }
+
+          it "will not allow you to delete a recommendation_measure" do
+            expect(subject).to be_forbidden
+          end
+        end
+
+        context "with a recommendation_measure belonging to the signed in user" do
+          let(:recommendation_measure) { FactoryBot.create(:recommendation_measure, created_by: user) }
+
+          it "will not allow you to delete a recommendation_measure" do
+            expect(subject).to be_forbidden
+          end
+        end
       end
-    end
 
-    context "when user signed in" do
-      let(:guest) { FactoryBot.create(:user) }
-      let(:user) { FactoryBot.create(:user, :manager) }
+      context "as a manager" do
+        let(:user) { FactoryBot.create(:user, :manager) }
 
-      it "will not allow a guest to delete a recommendation_measure" do
-        sign_in guest
-        expect(subject).to be_forbidden
+        context "with a recommendation_measure not belonging to the signed in user" do
+          let(:recommendation_measure) { FactoryBot.create(:recommendation_measure) }
+
+          it "will not allow you to delete a recommendation_measure" do
+            expect(subject).to be_forbidden
+          end
+        end
+
+        context "with a recommendation_measure belonging to the signed in user" do
+          let(:recommendation_measure) { FactoryBot.create(:recommendation_measure, created_by: user) }
+
+          it "will allow you to delete a recommendation_measure" do
+            expect(subject).to be_no_content
+          end
+        end
       end
 
-      it "will allow a manager to delete a recommendation_measure" do
-        sign_in user
-        expect(subject).to be_no_content
+      context "as a coordinator" do
+        let(:user) { FactoryBot.create(:user, :coordinator) }
+
+        context "with a recommendation_measure not belonging to the signed in user" do
+          let(:recommendation_measure) { FactoryBot.create(:recommendation_measure) }
+
+          it "will not allow you to delete a recommendation_measure" do
+            expect(subject).to be_forbidden
+          end
+        end
+
+        context "with a recommendation_measure belonging to the signed in user" do
+          let(:recommendation_measure) { FactoryBot.create(:recommendation_measure, created_by: user) }
+
+          it "will allow you to delete a recommendation_measure" do
+            expect(subject).to be_no_content
+          end
+        end
+      end
+
+      context "as an admin" do
+        let(:user) { FactoryBot.create(:user, :admin) }
+
+        context "with a recommendation_measure not belonging to the signed in user" do
+          let(:recommendation_measure) { FactoryBot.create(:recommendation_measure) }
+
+          it "will allow you to delete a recommendation_measure" do
+            expect(subject).to be_no_content
+          end
+        end
+
+        context "with a recommendation_measure belonging to the signed in user" do
+          let(:recommendation_measure) { FactoryBot.create(:recommendation_measure, created_by: user) }
+
+          it "will allow you to delete a recommendation_measure" do
+            expect(subject).to be_no_content
+          end
+        end
       end
     end
   end

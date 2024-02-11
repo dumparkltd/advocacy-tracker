@@ -11,7 +11,7 @@ class ApplicationController < ActionController::Base
   layout :layout_by_resource
 
   before_action :authenticate_user!, only: [:create, :update, :destroy], unless: :devise_controller?
-  before_action :authorize_base_object!, only: [:show, :index, :update, :destroy]
+  before_action :authorize!
   after_action :verify_authorized, except: [:index, :sign_in], unless: :devise_controller?
   after_action :verify_policy_scoped, only: :index, unless: :devise_controller?
 
@@ -26,7 +26,7 @@ class ApplicationController < ActionController::Base
 
   protected
 
-  def authorize_base_object!
+  def authorize!
     authorize(base_object) if defined?(base_object)
   end
 

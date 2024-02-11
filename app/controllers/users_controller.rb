@@ -1,7 +1,7 @@
 class UsersController < ApplicationController
   before_action :authenticate_user!, except: [:create]
 
-  skip_before_action :authorize_base_object!
+  skip_before_action :authorize!
   before_action :set_and_authorize_user, only: [:show, :update, :destroy]
 
   # GET /users
